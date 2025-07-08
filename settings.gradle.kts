@@ -19,5 +19,11 @@ dependencyResolutionManagement {
     }
 }
 
+<<<<<<< HEAD
 rootProject.name = "AskIt"
 include(":app")
+=======
+rootProject.name = "Askit"
+include(":app")
+ 
+>>>>>>> origin/Askit

@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
+<<<<<<< HEAD
     <style name="Theme.AskIt" parent="android:Theme.Material.Light.NoActionBar" />
+=======
+    <style name="Theme.Askit" parent="android:Theme.Material.Light.NoActionBar" />
+>>>>>>> origin/Askit
 </resources>
