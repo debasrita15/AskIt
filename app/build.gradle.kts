@@ -2,28 +2,29 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
-<<<<<<< HEAD
+//<<<<<<< HEAD
     alias(libs.plugins.google.gms.google.services)
-=======
->>>>>>> origin/Askit
+//=======
+//>>>>>>> origin/Askit
+    kotlin("plugin.serialization") version "2.0.21"
 }
 
 android {
     namespace = "com.example.askit"
-<<<<<<< HEAD
-    compileSdk = 35
-=======
+//<<<<<<< HEAD
+//    compileSdk = 35
+//=======
     compileSdk = 36
->>>>>>> origin/Askit
+//>>>>>>> origin/Askit
 
     defaultConfig {
         applicationId = "com.example.askit"
         minSdk = 24
-<<<<<<< HEAD
-        targetSdk = 35
-=======
+//<<<<<<< HEAD
+//        targetSdk = 35
+//=======
         targetSdk = 36
->>>>>>> origin/Askit
+//>>>>>>> origin/Askit
         versionCode = 1
         versionName = "1.0"
 
@@ -61,13 +62,14 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
-<<<<<<< HEAD
+//<<<<<<< HEAD
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore.ktx)
-    implementation(libs.androidx.navigation.runtime.android)
-    implementation(libs.androidx.navigation.compose.jvmstubs)
-=======
->>>>>>> origin/Askit
+//    implementation(libs.androidx.navigation.runtime.android)
+//    implementation(libs.androidx.navigation.compose.jvmstubs)
+    implementation(libs.androidx.core.splashscreen)
+//=======
+//>>>>>>> origin/Askit
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -75,18 +77,25 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
-<<<<<<< HEAD
+//<<<<<<< HEAD
+
+//=======
+//    implementation("com.google.firebase:firebase-auth-ktx")
+//    implementation("com.google.firebase:firebase-auth-ktx:22.3.1")
+//    implementation("androidx.compose.ui:ui:1.6.1")
+//    implementation("androidx.activity:activity-compose:1.8.0")
+//    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
+//    implementation("androidx.compose.material:material:1.6.1")
+//    implementation("androidx.navigation:navigation-compose:2.7.7")
+//    implementation("androidx.activity:activity-compose:1.7.2")
+//    implementation("androidx.compose.material3:material3:1.2.0")
+    val nav_version = "2.9.1"
+    implementation("androidx.navigation:navigation-compose:$nav_version")
+    implementation("androidx.navigation:navigation-fragment:$nav_version")
+    implementation("androidx.navigation:navigation-ui:$nav_version")
+    implementation("androidx.navigation:navigation-dynamic-features-fragment:$nav_version")
+    androidTestImplementation("androidx.navigation:navigation-testing:$nav_version")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
 }
-=======
-    implementation("com.google.firebase:firebase-auth-ktx")
-    implementation("com.google.firebase:firebase-auth-ktx:22.3.1")
-    implementation("androidx.compose.ui:ui:1.6.1")
-    implementation("androidx.activity:activity-compose:1.8.0")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
-    implementation("androidx.compose.material:material:1.6.1")
-    implementation("androidx.navigation:navigation-compose:2.7.7")
-    implementation("androidx.activity:activity-compose:1.7.2")
-    implementation("androidx.compose.material3:material3:1.2.0")
-}
-apply(plugin = "com.google.gms.google-services")
->>>>>>> origin/Askit
+//apply(plugin = "com.google.gms.google-services")
+//>>>>>>> origin/Askit

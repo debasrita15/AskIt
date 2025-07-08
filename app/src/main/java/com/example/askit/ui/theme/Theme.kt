@@ -34,11 +34,11 @@ private val LightColorScheme = lightColorScheme(
 )
 
 @Composable
-<<<<<<< HEAD
-fun AskItTheme(
-=======
-fun AskitTheme(
->>>>>>> origin/Askit
+//<<<<<<< HEAD
+//fun AskItTheme(
+//=======
+public fun AskitTheme(
+//>>>>>>> origin/Askit
     darkTheme: Boolean = isSystemInDarkTheme(),
     // Dynamic color is available on Android 12+
     dynamicColor: Boolean = true,

@@ -16,22 +16,32 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import kotlinx.coroutines.delay
+import java.util.Optional
 
 @Composable
-fun SplashScreen(navController: NavController) {
-    // Optional: Scale or fade-in animation
-    val scale = remember { Animatable(0f) }
+public fun SplashScreen(
+    navController: NavController
+) {
+//     Optional: Scale or fade-in animation
+//    val scale = remember { Animatable(0f) }
 
-    LaunchedEffect(true) {
-        scale.animateTo(
-            targetValue = 1f,
-            animationSpec = tween(durationMillis = 800, easing = EaseOutBack)
-        )
+//    LaunchedEffect(Unit) {
+//        scale.animateTo(
+//            targetValue = 1f,
+//            animationSpec = tween(durationMillis = 800, easing = EaseOutBack)
+//        )
+//        delay(2000)
+//        navController.navigate("signin") {
+//            popUpTo("splash") { inclusive = true }
+//        }
+//    }
+    LaunchedEffect(Unit) {
         delay(2000)
-        navController.navigate("login") {
+        navController.navigate("signin") {
             popUpTo("splash") { inclusive = true }
         }
     }
@@ -47,8 +57,15 @@ fun SplashScreen(navController: NavController) {
             color = Color(0xFF005FFF),
             fontSize = 42.sp,
             fontWeight = FontWeight.Bold,
-            modifier = Modifier.scale(scale.value),
-            fontFamily = FontFamily.SansSerif // Replace with custom if needed
+//            modifier = Modifier.scale(scale.value),
+            fontFamily = FontFamily.SansSerif, // Replace with custom if needed
+            modifier = Modifier.align((Alignment.Center))
         )
     }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun preview() {
+//    SplashScreen()
 }

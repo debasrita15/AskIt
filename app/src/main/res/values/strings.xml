@@ -1,7 +1,7 @@
 <resources>
-<<<<<<< HEAD
-    <string name="app_name">AskIt</string>
-=======
+<!--<<<<<<< HEAD-->
+<!--    <string name="app_name">AskIt</string>-->
+<!--=======-->
     <string name="app_name">Askit</string>
->>>>>>> origin/Askit
+<!--&gt;>>>>>> origin/Askit-->
 </resources>
