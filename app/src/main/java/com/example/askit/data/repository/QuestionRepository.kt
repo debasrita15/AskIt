@@ -14,7 +14,7 @@ class QuestionRepository {
 
     fun postQuestion(question: Question, onResult: (Boolean) -> Unit) {
         val docId = questionsRef.document().id
-        val questionWithId = question.copy(id = docId)
+        val questionWithId = question.copy(questionId = docId)
         questionsRef.document(docId).set(questionWithId)
             .addOnSuccessListener { onResult(true) }
             .addOnFailureListener { onResult(false) }

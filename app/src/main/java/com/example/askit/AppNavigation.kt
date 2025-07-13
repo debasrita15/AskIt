@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.askit.auth.view.AnswerPage
 import com.example.askit.auth.view.SignInScreen
 import com.example.askit.auth.view.SignUpScreen
 import com.example.askit.ui.screens.SplashScreen
@@ -21,6 +22,11 @@ import com.example.askit.ui.screens.SplashScreen
         composable("signup") {
             SignUpScreen(
                 onSwitchToSignIn = { navController.navigate("home") }
+            )
+        }
+        composable("home") {
+            AnswerPage(
+                questionId = "questionId"
             )
         }
     }

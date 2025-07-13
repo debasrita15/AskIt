@@ -96,6 +96,8 @@ dependencies {
     implementation("androidx.navigation:navigation-dynamic-features-fragment:$nav_version")
     androidTestImplementation("androidx.navigation:navigation-testing:$nav_version")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
+
+    implementation("io.coil-kt:coil-compose:2.4.0")
 }
 //apply(plugin = "com.google.gms.google-services")
 //>>>>>>> origin/Askit

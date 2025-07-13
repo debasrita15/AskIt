@@ -1,7 +1,7 @@
 package com.example.askit.data.model
 
 data class Question(
-    val id: String = "",
+    val questionId: String = "",
     val userId: String = "",
     val title: String = "",
     val details: String = "",
