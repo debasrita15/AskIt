@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "819879848157",
-    "project_id": "askit-88350",
-    "storage_bucket": "askit-88350.firebasestorage.app"
+    "project_number": "895621764040",
+    "project_id": "askit-5459c",
+    "storage_bucket": "askit-5459c.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:819879848157:android:db0cab874beeb9f4305334",
+        "mobilesdk_app_id": "1:895621764040:android:c762249c5117aa2fc766fd",
         "android_client_info": {
           "package_name": "com.example.askit"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyB-26yC65R1Oots_nzrdqehua86cMvJWwc"
+          "current_key": "AIzaSyBBiGRWqgmSySV_6sbiao0eJdGEru_rjp0"
         }
       ],
       "services": {
