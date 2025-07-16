@@ -3,9 +3,19 @@ package com.example.askit
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+ profile
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import com.example.askit.auth.view.ProfileScreen
+
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.navigation.compose.rememberNavController
+ main
 import com.example.askit.auth.view.SignInScreen
 import com.example.askit.auth.view.SignUpScreen
 import com.example.askit.ui.theme.AskitTheme
@@ -19,6 +29,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         setContent {
+ profile
             AskitTheme {
                 val firebaseAuth = remember { FirebaseAuth.getInstance() }
                 val db = remember { FirebaseFirestore.getInstance() }
@@ -91,8 +102,49 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                     }
+
+//            AskItTheme { // Use your app's theme
+//                Surface(color = MaterialTheme.colorScheme.background) {
+//                    val navController = rememberNavController()
+//                    AppNavigation(navController = navController)
+            AskitTheme {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = Color.White
+                ) {
+                    AskitAuthScreen()
+ main
                 }
+            }
+            setContent {
+                AppNavigation()
             }
         }
     }
 }
+ profile
+
+//    }
+//}
+
+
+//@Composable
+//fun AppNavigation(navController: NavHostController) {
+//    NavHost(navController = navController, startDestination = "splash") {
+//
+//        composable("splash") {
+//            SplashScreen(navController)
+//        }
+//    }
+//}
+@Composable
+fun AskitAuthScreen() {
+    var isSignIn by remember { mutableStateOf(true) }
+
+    if (isSignIn) {
+        SignInScreen(onSwitchToSignUp = { isSignIn = false })
+    } else {
+        SignUpScreen(onSwitchToSignIn = { isSignIn = true })
+    }
+}
+ main

@@ -93,5 +93,9 @@ fun SignInScreen(
         )
 
 
+ profile
     }
 }
+
+}
+ main
