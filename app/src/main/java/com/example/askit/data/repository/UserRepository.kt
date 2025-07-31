@@ -1,27 +1,83 @@
 package com.example.askit.data.repository
 
-import com.example.askit.data.model.User
-import com.google.firebase.Firebase
-import com.google.firebase.firestore.firestore
-import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.callbackFlow
+import android.util.Log
+import com.example.askit.data.model.UserProfile
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 
-class UserRepository {
-    private val usersRef = Firebase.firestore.collection("users")
+class UserRepository(
+    private val auth: FirebaseAuth = FirebaseAuth.getInstance(),
+    private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
+) {
 
-    fun getUserById(uid: String): Flow<User?> = callbackFlow {
-        val listener = usersRef.document(uid)
-            .addSnapshotListener { snapshot, _ ->
-                val user = snapshot?.toObject(User::class.java)
-                trySend(user)
+    fun registerUser(
+        name: String,
+        email: String,
+        password: String,
+        onResult: (Boolean, String?) -> Unit
+    ) {
+        val normalizedEmail = email.trim().lowercase()
+
+        auth.createUserWithEmailAndPassword(normalizedEmail, password)
+            .addOnSuccessListener { authResult ->
+                val uid = authResult.user?.uid
+                if (uid != null) {
+                    val userProfile = UserProfile(
+                        uid = uid,
+                        name = name,
+                        email = normalizedEmail
+                    )
+                    firestore.collection("users")
+                        .document(uid)
+                        .set(userProfile)
+                        .addOnSuccessListener {
+                            onResult(true, null)
+                        }
+                        .addOnFailureListener {
+                            Log.e("UserRepository", "Profile save error: ${it.message}")
+                            onResult(false, "Failed to save profile: ${it.message}")
+                        }
+                } else {
+                    onResult(false, "User ID not found")
+                }
             }
-        awaitClose { listener.remove() }
+            .addOnFailureListener {
+                Log.e("UserRepository", "Register error: ${it.message}")
+                onResult(false, it.message)
+            }
     }
 
-    fun updateUser(user: User, onResult: (Boolean) -> Unit) {
-        usersRef.document(user.uid).set(user)
-            .addOnSuccessListener { onResult(true) }
-            .addOnFailureListener { onResult(false) }
+    fun signInUser(
+        email: String,
+        password: String,
+        onResult: (Boolean, String?) -> Unit
+    ) {
+        val normalizedEmail = email.trim().lowercase()
+
+        auth.signInWithEmailAndPassword(normalizedEmail, password)
+            .addOnSuccessListener {
+                onResult(true, null)
+            }
+            .addOnFailureListener {
+                Log.e("UserRepository", "Sign-in error: ${it.message}")
+                onResult(false, it.message)
+            }
+    }
+
+    fun getUserProfile(
+        uid: String,
+        onResult: (UserProfile?) -> Unit
+    ) {
+        firestore.collection("users")
+            .document(uid)
+            .get()
+            .addOnSuccessListener { doc ->
+                val profile = doc.toObject(UserProfile::class.java)
+                onResult(profile)
+            }
+            .addOnFailureListener {
+                Log.e("UserRepository", "Get profile error: ${it.message}")
+                onResult(null)
+            }
     }
 }

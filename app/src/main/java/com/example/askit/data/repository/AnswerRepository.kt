@@ -20,12 +20,23 @@ class AnswerRepository {
     }
 
     fun getAnswersForQuestion(questionId: String): Flow<List<Answer>> = callbackFlow {
-        val listener = answersRef.whereEqualTo("questionId", questionId)
+        val listenerRegistration = answersRef
+            .whereEqualTo("questionId", questionId)
             .orderBy("timestamp", Query.Direction.DESCENDING)
-            .addSnapshotListener { snapshot, _ ->
-                val list = snapshot?.toObjects(Answer::class.java) ?: emptyList()
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    trySend(emptyList())
+                    return@addSnapshotListener
+                }
+
+                val list = snapshot?.documents?.mapNotNull { doc ->
+                    doc.toObject(Answer::class.java)?.copy(id = doc.id)
+                } ?: emptyList()
+
                 trySend(list)
             }
-        awaitClose { listener.remove() }
+
+        awaitClose { listenerRegistration.remove() }
     }
 }
+

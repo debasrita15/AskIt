@@ -1,4 +1,4 @@
-package com.example.askit.auth.view
+package com.example.askit.data.view
 
 import android.widget.Toast
 import androidx.compose.foundation.clickable
@@ -14,7 +14,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.askit.auth.viewmodels.AuthViewModel
+import com.example.askit.data.viewmodel.AuthViewModel
 
 @Composable
 fun SignUpScreen(
@@ -25,7 +25,22 @@ fun SignUpScreen(
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var isLoading by remember { mutableStateOf(false) }
+    var snackbarMessage by remember { mutableStateOf<String?>(null) }
+
     val context = LocalContext.current
+
+    // Snackbar for errors
+    snackbarMessage?.let { message ->
+        Snackbar(
+            action = {
+                TextButton(onClick = { snackbarMessage = null }) {
+                    Text("OK")
+                }
+            },
+            modifier = Modifier.padding(16.dp)
+        ) { Text(message) }
+    }
 
     Column(
         modifier = Modifier
@@ -42,7 +57,7 @@ fun SignUpScreen(
         OutlinedTextField(
             value = name,
             onValueChange = { name = it },
-            label = { Text("Full Name") },
+            label = { Text("Enter your Username") },
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(16.dp))
@@ -50,7 +65,7 @@ fun SignUpScreen(
         OutlinedTextField(
             value = email,
             onValueChange = { email = it },
-            label = { Text("Email Address") },
+            label = { Text("Enter your Email Address") },
             modifier = Modifier.fillMaxWidth(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
         )
@@ -59,33 +74,50 @@ fun SignUpScreen(
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
-            label = { Text("Password") },
+            label = { Text("Enter your Password") },
             visualTransformation = PasswordVisualTransformation(),
             modifier = Modifier.fillMaxWidth(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
         )
         Spacer(modifier = Modifier.height(24.dp))
 
-        // ✅ Button using viewModel for sign-up
         Button(
             onClick = {
                 if (name.isNotEmpty() && email.isNotEmpty() && password.isNotEmpty()) {
+                    val emailPattern = Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}$")
+                    if (!email.matches(emailPattern)) {
+                        snackbarMessage = "Enter a valid email address"
+                        return@Button
+                    }
+
+                    isLoading = true
                     viewModel.signUp(name, email, password) { success, message ->
+                        isLoading = false
                         if (success) {
                             Toast.makeText(context, "Account Created", Toast.LENGTH_SHORT).show()
-                            onSignUpSuccess() // ✅ navigate to Profile
+                            onSignUpSuccess()
                         } else {
-                            Toast.makeText(context, message ?: "Signup Failed", Toast.LENGTH_SHORT)
-                                .show()
+                            snackbarMessage = message ?: "Signup Failed"
                         }
                     }
                 } else {
-                    Toast.makeText(context, "Fill all fields", Toast.LENGTH_SHORT).show()
+                    snackbarMessage = "Please fill all fields"
                 }
             },
-            modifier = Modifier.fillMaxWidth().height(50.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(50.dp),
+            enabled = !isLoading
         ) {
-            Text("Create Account")
+            if (isLoading) {
+                CircularProgressIndicator(
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    modifier = Modifier.size(24.dp),
+                    strokeWidth = 2.dp
+                )
+            } else {
+                Text("Create Account")
+            }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -95,9 +127,5 @@ fun SignUpScreen(
             color = MaterialTheme.colorScheme.primary,
             modifier = Modifier.clickable { onSwitchToSignIn() }
         )
-
-
     }
 }
-
-

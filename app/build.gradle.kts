@@ -77,7 +77,6 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
- profile
     implementation("com.google.firebase:firebase-auth-ktx")
     implementation("com.google.firebase:firebase-auth-ktx:22.3.1")
     implementation("androidx.compose.ui:ui:1.6.1")
@@ -117,7 +116,6 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
 
     implementation("io.coil-kt:coil-compose:2.4.0")
-main
 }
 //apply(plugin = "com.google.gms.google-services")
 //>>>>>>> origin/Askit
