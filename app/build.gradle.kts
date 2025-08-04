@@ -54,68 +54,38 @@ android {
 
 dependencies {
 
-    implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.lifecycle.runtime.ktx)
-    implementation(libs.androidx.activity.compose)
-    implementation(platform(libs.androidx.compose.bom))
-    implementation(libs.androidx.ui)
-    implementation(libs.androidx.ui.graphics)
-    implementation(libs.androidx.ui.tooling.preview)
-    implementation(libs.androidx.material3)
-//<<<<<<< HEAD
-    implementation(libs.firebase.auth)
-    implementation(libs.firebase.firestore.ktx)
-//    implementation(libs.androidx.navigation.runtime.android)
-//    implementation(libs.androidx.navigation.compose.jvmstubs)
-    implementation(libs.androidx.core.splashscreen)
-//=======
-//>>>>>>> origin/Askit
-    testImplementation(libs.junit)
-    androidTestImplementation(libs.androidx.junit)
-    androidTestImplementation(libs.androidx.espresso.core)
-    androidTestImplementation(platform(libs.androidx.compose.bom))
-    androidTestImplementation(libs.androidx.ui.test.junit4)
-    debugImplementation(libs.androidx.ui.tooling)
-    debugImplementation(libs.androidx.ui.test.manifest)
-    implementation("com.google.firebase:firebase-auth-ktx")
-    implementation("com.google.firebase:firebase-auth-ktx:22.3.1")
-    implementation("androidx.compose.ui:ui:1.6.1")
-    implementation("androidx.activity:activity-compose:1.8.0")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
-    implementation("androidx.compose.material:material:1.6.1")
-    implementation("androidx.navigation:navigation-compose:2.7.7")
-    implementation("androidx.activity:activity-compose:1.7.2")
-    implementation("androidx.compose.material3:material3:1.2.0")
-    implementation("androidx.compose.material:material-icons-extended:1.6.1")
-    implementation(platform("com.google.firebase:firebase-bom:33.0.0"))
-    implementation("com.google.firebase:firebase-firestore-ktx")
-    implementation("androidx.compose.material:material:1.5.4")
-    implementation("androidx.compose.material:material-icons-extended:1.5.4")
-    implementation("androidx.compose.material3:material3:1.1.2")
+    dependencies {
+        implementation(libs.androidx.core.ktx)
+        implementation(libs.androidx.lifecycle.runtime.ktx)
+        implementation(libs.androidx.activity.compose)
+        implementation(platform(libs.androidx.compose.bom))
+        implementation(libs.androidx.ui)
+        implementation(libs.androidx.ui.graphics)
+        implementation(libs.androidx.ui.tooling.preview)
+        implementation(libs.androidx.material3)
 
+        // Firebase (Using BOM)
+        implementation(platform("com.google.firebase:firebase-bom:33.0.0"))
+        implementation("com.google.firebase:firebase-auth-ktx")
+        implementation("com.google.firebase:firebase-firestore-ktx")
 
+        implementation("androidx.core:core-splashscreen:1.0.1")
+        implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
+        implementation("androidx.navigation:navigation-compose:2.7.7")
+        implementation("androidx.compose.material:material:1.6.1")
+        implementation("androidx.compose.material:material-icons-extended:1.6.1")
+        implementation("androidx.compose.material3:material3:1.2.0")
+        implementation("io.coil-kt:coil-compose:2.4.0")
 
-//<<<<<<< HEAD
+        implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
 
-//=======
-//    implementation("com.google.firebase:firebase-auth-ktx")
-//    implementation("com.google.firebase:firebase-auth-ktx:22.3.1")
-//    implementation("androidx.compose.ui:ui:1.6.1")
-//    implementation("androidx.activity:activity-compose:1.8.0")
-//    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
-//    implementation("androidx.compose.material:material:1.6.1")
-//    implementation("androidx.navigation:navigation-compose:2.7.7")
-//    implementation("androidx.activity:activity-compose:1.7.2")
-//    implementation("androidx.compose.material3:material3:1.2.0")
-    val nav_version = "2.9.1"
-    implementation("androidx.navigation:navigation-compose:$nav_version")
-    implementation("androidx.navigation:navigation-fragment:$nav_version")
-    implementation("androidx.navigation:navigation-ui:$nav_version")
-    implementation("androidx.navigation:navigation-dynamic-features-fragment:$nav_version")
-    androidTestImplementation("androidx.navigation:navigation-testing:$nav_version")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
+        testImplementation(libs.junit)
+        androidTestImplementation(libs.androidx.junit)
+        androidTestImplementation(libs.androidx.espresso.core)
+        androidTestImplementation(platform(libs.androidx.compose.bom))
+        androidTestImplementation(libs.androidx.ui.test.junit4)
+        debugImplementation(libs.androidx.ui.tooling)
+        debugImplementation(libs.androidx.ui.test.manifest)
+    }
 
-    implementation("io.coil-kt:coil-compose:2.4.0")
 }
-//apply(plugin = "com.google.gms.google-services")
-//>>>>>>> origin/Askit

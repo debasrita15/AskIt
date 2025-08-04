@@ -1,12 +1,38 @@
 package com.example.askit.data.model
 
+import com.google.firebase.firestore.DocumentId
+import com.google.firebase.firestore.PropertyName
+import java.util.UUID
+
 data class Answer(
-    val id: String = "",
-    val uid: String = "",
-    val questionId: String = "",
-    val text: String = "",
-    val userName: String? = null,
-    val questionTitle: String = "",
-    val timestamp: Long = System.currentTimeMillis(),
-    val likes: Map<String, Boolean> = emptyMap()  // key: userId, value: true
+    @DocumentId
+    val id: String = UUID.randomUUID().toString(),
+
+    @get:PropertyName("questionId")
+    @set:PropertyName("questionId")
+    var questionId: String = "",
+
+    @get:PropertyName("content")
+    @set:PropertyName("content")
+    var content: String = "",
+
+    @get:PropertyName("authorUid")
+    @set:PropertyName("authorUid")
+    var authorUid: String = "",
+
+    @get:PropertyName("authorName")
+    @set:PropertyName("authorName")
+    var authorName: String = "",
+
+    @get:PropertyName("timestamp")
+    @set:PropertyName("timestamp")
+    var timestamp: Long = System.currentTimeMillis(),
+
+    @get:PropertyName("upvotes")
+    @set:PropertyName("upvotes")
+    var upvotes: List<String> = emptyList(),
+
+    @get:PropertyName("votedBy")
+    @set:PropertyName("votedBy")
+    var votedBy: Map<String, Int> = emptyMap()
 )

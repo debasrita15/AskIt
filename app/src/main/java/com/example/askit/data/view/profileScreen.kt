@@ -1,35 +1,29 @@
 package com.example.askit.data.view
 
-import android.app.Activity
-import android.content.Intent
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.net.Uri
-import android.provider.MediaStore
-import android.util.Base64
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Image
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ExitToApp
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Comment
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -38,9 +32,11 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.askit.data.viewmodel.ProfileViewModel
 import com.example.askit.data.badges.BadgeMilestones
+import com.example.askit.data.model.Answer
+import com.example.askit.data.model.Question
+import com.example.askit.data.viewmodel.AnswerViewModel
 import com.example.askit.data.viewmodel.QuestionViewModel
 import com.google.firebase.auth.FirebaseAuth
-import java.io.ByteArrayOutputStream
 
 
 data class Badge(
@@ -59,23 +55,11 @@ fun ProfileScreen(
     val userProfile by viewModel.userProfile.collectAsState()
     val userQuestions by viewModel.userQuestions.collectAsState()
     val userAnswers by viewModel.userAnswers.collectAsState()
-    val context = LocalContext.current
     val questionCount by viewModel.questionCount.collectAsState()
     val answerCount by viewModel.answerCount.collectAsState()
 
-
     var selectedBadge by remember { mutableStateOf<Badge?>(null) }
     var showLogoutDialog by remember { mutableStateOf(false) }
-
-    val imagePickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        uri?.let {
-            val bitmap = MediaStore.Images.Media.getBitmap(context.contentResolver, it)
-            val base64 = encodeBitmapToBase64(bitmap)
-            viewModel.updateProfileImage(base64)
-        }
-    }
 
     val badges by remember(userQuestions, userAnswers) {
         derivedStateOf {
@@ -98,61 +82,50 @@ fun ProfileScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp)
         ) {
-            Spacer(modifier = Modifier.height(20.dp))
-
-            // Profile image and name
+            // Initial Avatar Circle
             Box(
                 modifier = Modifier
                     .size(100.dp)
                     .clip(CircleShape)
-                    .clickable {
-                        imagePickerLauncher.launch("image/*")
-                    }
+                    .background(Color(0xFF4C6EF5), CircleShape)
+                    .align(Alignment.CenterHorizontally),
+                contentAlignment = Alignment.Center
             ) {
-                if (!profile.profileImageBase64.isNullOrEmpty()) {
-                    val imageBytes = Base64.decode(profile.profileImageBase64, Base64.DEFAULT)
-                    val bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
-                    Image(
-                        bitmap = bitmap.asImageBitmap(),
-                        contentDescription = "Profile Image",
-                        modifier = Modifier.fillMaxSize()
-                    )
-                } else {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(Color.LightGray, CircleShape)
-                    )
-                }
+                Text(
+                    text = profile.name.firstOrNull()?.uppercase() ?: "?",
+                    color = Color.White,
+                    fontSize = 36.sp,
+                    fontWeight = FontWeight.Bold
+                )
             }
 
             Spacer(modifier = Modifier.height(12.dp))
 
+            // Username
             Text(
-                text = profile.name, // Replace with real user name
+                text = profile.name,
                 fontSize = 22.sp,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.align(Alignment.CenterHorizontally)
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
-            // Stats row
+            // Stats Row
             Card(
                 shape = RoundedCornerShape(16.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFF9FAFC)),
+                elevation = CardDefaults.cardElevation(4.dp)
             ) {
                 Row(
-                    modifier = Modifier
-                        .padding(vertical = 16.dp)
-                        .fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
-                    StatCard(label= "Questions", count = questionCount)
+                    StatCard(label = "Questions", count = questionCount)
                     StatCard(label = "Answers", count = answerCount)
                     StatCard(label = "Badges", count = badges.size)
                 }
@@ -160,44 +133,45 @@ fun ProfileScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            Divider(color = Color.LightGray, thickness = 1.dp)
-
-            // Badges section
+            // Badges Section
             if (badges.isNotEmpty()) {
                 Text(
                     text = "Earned Badges",
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 18.sp,
-                    modifier = Modifier.align(Alignment.Start)
+                    modifier = Modifier.padding(bottom = 8.dp)
                 )
-                Spacer(modifier = Modifier.height(8.dp))
+
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(badges) { badge ->
                         BadgeCard(badge = badge) { selectedBadge = badge }
                     }
                 }
-                Spacer(modifier = Modifier.height(20.dp))
+
+                Spacer(modifier = Modifier.height(24.dp))
             }
 
-            // Action Menu
+            // Menu Options
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFF4F5F7))
             ) {
                 Column {
                     MenuCard("My Questions", onClick = onMyQuestionsClick)
+                    Divider()
                     MenuCard("My Answers", onClick = onMyAnswersClick)
+                    Divider()
                     MenuCard("Settings", onClick = onSettingsClick)
                 }
             }
 
-            Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.height(30.dp))
 
+            // Logout Button
             Button(
                 onClick = { showLogoutDialog = true },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 16.dp),
+                modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
             ) {
                 Text("Logout", color = Color.White)
@@ -210,34 +184,23 @@ fun ProfileScreen(
         CircularProgressIndicator()
     }
 
-    // Badge Dialog
-    selectedBadge?.let { badge ->
-        AlertDialog(
-            onDismissRequest = { selectedBadge = null },
-            title = { Text(text = badge.title) },
-            text = { Text(text = badge.description) },
-            confirmButton = {
-                TextButton(onClick = { selectedBadge = null }) {
-                    Text("OK")
-                }
-            }
-        )
+    // Badge Detail Dialog
+    selectedBadge?.let {
+        BadgeDetailDialog(badge = it, onDismiss = { selectedBadge = null })
     }
 
-    // Logout Dialog
+    // Logout Confirmation Dialog
     if (showLogoutDialog) {
         AlertDialog(
             onDismissRequest = { showLogoutDialog = false },
             title = { Text("Confirm Logout") },
             text = { Text("Are you sure you want to log out?") },
             confirmButton = {
-                TextButton(
-                    onClick = {
-                        showLogoutDialog = false
-                        viewModel.logout()
-                        onLogout()
-                    }
-                ) { Text("Yes") }
+                TextButton(onClick = {
+                    showLogoutDialog = false
+                    viewModel.logout()
+                    onLogout()
+                }) { Text("Yes") }
             },
             dismissButton = {
                 TextButton(onClick = { showLogoutDialog = false }) {
@@ -247,6 +210,7 @@ fun ProfileScreen(
         )
     }
 }
+
 
 
 @Composable
@@ -308,83 +272,115 @@ fun BadgeCard(badge: Badge, onClick: (Badge) -> Unit) {
     }
 }
 
-
-fun encodeBitmapToBase64(bitmap: Bitmap): String {
-    val outputStream = ByteArrayOutputStream()
-    bitmap.compress(Bitmap.CompressFormat.JPEG, 80, outputStream)
-    val byteArray = outputStream.toByteArray()
-    return Base64.encodeToString(byteArray, Base64.DEFAULT)
+@Composable
+fun BadgeDetailDialog(
+    badge: Badge,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("OK")
+            }
+        },
+        title = { Text(badge.title, fontWeight = FontWeight.Bold) },
+        text = { Text(badge.description) }
+    )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+
 @Composable
 fun MyQuestionsScreen(
-    profileViewModel: ProfileViewModel,
+    questionViewModel: QuestionViewModel,
     navController: NavController
 ) {
-    val userQuestions by profileViewModel.userQuestions.collectAsState()
-    val isLoading = userQuestions.isEmpty() // You can make this better using a loading state if needed
+    val context = LocalContext.current
+    val currentUser = FirebaseAuth.getInstance().currentUser
+    val myUid = currentUser?.uid ?: ""
+    val allQuestions by questionViewModel.questions.collectAsState()
+    var editingQuestion by remember { mutableStateOf<Question?>(null) }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("My Questions") },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
-                    }
-                }
-            )
-        }
-    ) { innerPadding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-        ) {
-            when {
-                isLoading -> {
-                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-                }
+    LaunchedEffect(Unit) {
+        questionViewModel.fetchQuestions()
+    }
 
-                userQuestions.isEmpty() -> {
+    val myQuestions = allQuestions.filter { it.uid == myUid }
+
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(12.dp)
+    ) {
+        items(myQuestions) { question ->
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp)
+                    .clickable {
+                        navController.navigate("answers/${question.id}")
+                    },
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(4.dp)
+            ) {
+                Column(modifier = Modifier.padding(12.dp)) {
+
                     Text(
-                        "You haven’t asked any questions yet.",
-                        modifier = Modifier.align(Alignment.Center)
+                        text = question.authorName + if (question.edited) " (edited)" else "",
+                        fontWeight = FontWeight.Bold
                     )
-                }
 
-                else -> {
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(12.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text(text = question.title, style = MaterialTheme.typography.titleMedium)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(text = question.description ?: "", style = MaterialTheme.typography.bodySmall)
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Row(
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        items(userQuestions) { question ->
-                            Card(
-                                shape = RoundedCornerShape(12.dp),
-                                elevation = CardDefaults.cardElevation(4.dp),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable {
-                                        navController.navigate("answer_page/${question.id}")
-                                    }
-                            ) {
-                                Column(modifier = Modifier.padding(16.dp)) {
-                                    Text(
-                                        text = question.title,
-                                        fontWeight = FontWeight.SemiBold,
-                                        fontSize = 16.sp
-                                    )
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    Text(
-                                        text = question.description,
-                                        fontSize = 14.sp,
-                                        maxLines = 2,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.ThumbUp,
+                                contentDescription = "Upvote",
+                                tint = if (questionViewModel.hasUpvoted(question, myUid)) Color.Blue else Color.Gray,
+                                modifier = Modifier.clickable {
+                                    questionViewModel.upvoteQuestion(question.id, myUid)
                                 }
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("${question.upvotes.size}")
+
+                            Spacer(modifier = Modifier.width(16.dp))
+
+                            Icon(
+                                imageVector = Icons.Default.Comment,
+                                contentDescription = "Answers",
+                                modifier = Modifier.clickable {
+                                    navController.navigate("answers/${question.id}")
+                                }
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("${question.answersCount}")
+                        }
+
+                        Row {
+                            IconButton(onClick = {
+                                editingQuestion = question
+                            }) {
+                                Icon(Icons.Default.Edit, contentDescription = "Edit")
+                            }
+
+                            IconButton(onClick = {
+                                questionViewModel.deleteQuestion(question.id) {
+                                    Toast.makeText(context, "Deleted", Toast.LENGTH_SHORT).show()
+                                }
+                            }) {
+                                Icon(Icons.Default.Delete, contentDescription = "Delete")
                             }
                         }
                     }
@@ -392,18 +388,93 @@ fun MyQuestionsScreen(
             }
         }
     }
+
+    if (editingQuestion != null) {
+        EditQuestionDialog(
+            original = editingQuestion!!,
+            onDismiss = { editingQuestion = null },
+            onConfirm = { updated ->
+                questionViewModel.editQuestion(updated) {
+                    Toast.makeText(context, "Edited", Toast.LENGTH_SHORT).show()
+                }
+                editingQuestion = null
+            }
+        )
+    }
 }
 
 
+@Composable
+fun EditQuestionDialog(
+    original: Question,
+    onDismiss: () -> Unit,
+    onConfirm: (Question) -> Unit
+) {
+    var title by remember { mutableStateOf(original.title) }
+    var description by remember { mutableStateOf(original.description ?: "") }
+    var category by remember { mutableStateOf(original.category ?: "") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Edit Question") },
+        text = {
+            Column {
+                OutlinedTextField(
+                    value = title,
+                    onValueChange = { title = it },
+                    label = { Text("Title") }
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    label = { Text("Description") },
+                    maxLines = 4
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = category,
+                    onValueChange = { category = it },
+                    label = { Text("Category") }
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                val updated = original.copy(
+                    title = title,
+                    description = description,
+                    category = category,
+                    edited = true
+                )
+                onConfirm(updated)
+            }) {
+                Text("Save")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
+}
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MyAnswersScreen(
-    profileViewModel: ProfileViewModel,
+    answerViewModel: AnswerViewModel,
     navController: NavController
 ) {
-    val userAnswers by profileViewModel.userAnswers.collectAsState()
+    val context = LocalContext.current
+    val currentUserId = FirebaseAuth.getInstance().currentUser?.uid.orEmpty()
+    val answersMap by answerViewModel.answersMap.collectAsState()
+    var editingAnswer by remember { mutableStateOf<Answer?>(null) }
+
+    // Flatten map and filter by current user
+    val allAnswers = answersMap.values.flatten()
+    val userAnswers = allAnswers.filter { it.authorUid == currentUserId }
 
     Scaffold(
         topBar = {
@@ -438,35 +509,102 @@ fun MyAnswersScreen(
                     Card(
                         shape = RoundedCornerShape(12.dp),
                         elevation = CardDefaults.cardElevation(4.dp),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                navController.navigate("answer_page/${answer.questionId}")
-                            }
+                        modifier = Modifier.fillMaxWidth()
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
-                            Text(
-                                text = "In response to:",
-                                fontSize = 12.sp,
-                                color = Color.Gray
-                            )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = answer.questionTitle,
-                                fontWeight = FontWeight.SemiBold,
-                                fontSize = 14.sp
-                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Column {
+                                    Text("In response to:", fontSize = 12.sp, color = Color.Gray)
+                                    Text(answer.questionId, fontWeight = FontWeight.SemiBold)
+                                    // You can fetch and display actual question title here
+                                }
+                                Row {
+                                    IconButton(onClick = { editingAnswer = answer }) {
+                                        Icon(Icons.Default.Edit, contentDescription = "Edit")
+                                    }
+                                    IconButton(onClick = {
+                                        answerViewModel.deleteAnswer(answer.id, answer.questionId) { success ->
+                                            if (success) {
+                                                Toast.makeText(context, "Answer deleted", Toast.LENGTH_SHORT).show()
+                                            }
+                                        }
+                                    }) {
+                                        Icon(Icons.Default.Delete, contentDescription = "Delete")
+                                    }
+                                }
+                            }
+
                             Spacer(modifier = Modifier.height(6.dp))
                             Text(
-                                text = answer.text,
+                                text = answer.content,
                                 fontSize = 14.sp,
                                 maxLines = 4,
                                 overflow = TextOverflow.Ellipsis
+                            )
+
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "Upvotes: ${answer.upvotes.size}",
+                                fontSize = 12.sp,
+                                color = Color.Gray
                             )
                         }
                     }
                 }
             }
+
+            editingAnswer?.let { answer ->
+                EditAnswerDialog(
+                    original = answer,
+                    onDismiss = { editingAnswer = null },
+                    onConfirm = { updatedContent ->
+                        answerViewModel.editAnswer(answer.id, updatedContent, answer.questionId) { success ->
+                            if (success) {
+                                Toast.makeText(context, "Answer updated", Toast.LENGTH_SHORT).show()
+                                editingAnswer = null
+                            }
+                        }
+                    }
+                )
+            }
         }
     }
+}
+
+
+@Composable
+fun EditAnswerDialog(
+    original: Answer,
+    onDismiss: () -> Unit,
+    onConfirm: (String) -> Unit
+) {
+    var content by remember { mutableStateOf(original.content) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Edit Answer") },
+        text = {
+            OutlinedTextField(
+                value = content,
+                onValueChange = { content = it },
+                label = { Text("Your Answer") },
+                maxLines = 6,
+                modifier = Modifier.fillMaxWidth()
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = { onConfirm(content) }) {
+                Text("Save")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
 }

@@ -1,13 +1,16 @@
 package com.example.askit
 
 import android.annotation.SuppressLint
-import androidx.compose.runtime.Composable
+import androidx.activity.compose.BackHandler
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.askit.data.view.*
-import com.example.askit.data.viewmodel.AuthViewModel
+import com.example.askit.data.viewmodel.AnswerViewModel
 import com.example.askit.data.viewmodel.ProfileViewModel
 import com.example.askit.data.viewmodel.QuestionViewModel
 
@@ -18,6 +21,10 @@ fun AppNavigation(
     profileViewModel: ProfileViewModel,
     modifier: Modifier = Modifier
 ) {
+    var showExitDialog by remember { mutableStateOf(false) }
+    val questionViewModel: QuestionViewModel = viewModel()
+    val answerViewModel: AnswerViewModel = viewModel()
+
     NavHost(
         navController = navController,
         startDestination = "splash",
@@ -45,7 +52,7 @@ fun AppNavigation(
                 onSwitchToSignUp = { navController.navigate("signup") },
                 onSignInSuccess = {
                     navController.navigate("home") {
-                        popUpTo("signin") { inclusive = true }
+                        popUpTo("splash") { inclusive = true }
                     }
                 }
             )
@@ -57,13 +64,13 @@ fun AppNavigation(
                 onSwitchToSignIn = { navController.popBackStack() },
                 onSignUpSuccess = {
                     navController.navigate("home") {
-                        popUpTo("signup") { inclusive = true }
+                        popUpTo("splash") { inclusive = true }
                     }
                 }
             )
         }
 
-        // ✅ Home
+        // ✅ Home Screen
         composable("home") {
             HomeScreen(navController = navController)
         }
@@ -108,28 +115,36 @@ fun AppNavigation(
             ChangeEmailScreen(onBack = { navController.popBackStack() })
         }
 
+        // ✅ My Questions
         composable("myquestions") {
             MyQuestionsScreen(
-                profileViewModel = profileViewModel,
-                navController = navController
+                navController = navController,
+                questionViewModel = questionViewModel
             )
         }
 
+
+        // ✅ My Answers
         composable("myanswers") {
             MyAnswersScreen(
-                profileViewModel = profileViewModel,
+                answerViewModel = answerViewModel,
                 navController = navController
             )
         }
 
-        // Navigate to answer page with questionId
-        composable("answer/{questionId}") { backStackEntry ->
-            val questionId = backStackEntry.arguments?.getString("questionId") ?: return@composable
+        composable("answer/{questionId}/{questionTitle}") { backStackEntry ->
+            val questionId =
+                backStackEntry.arguments?.getString("questionId") ?: return@composable
+            val questionTitle = backStackEntry.arguments?.getString("questionTitle") ?: ""
             AnswerPage(
+                questionTitle = questionTitle,
                 questionId = questionId,
-                onBackPressed = { navController.popBackStack() }
+                navController = navController,
+                answerViewModel = answerViewModel
             )
+        }
+        composable("notifications") {
+            NotificationScreen(navController = navController)
         }
     }
 }
-

@@ -1,42 +1,73 @@
 package com.example.askit.data.repository
 
 import com.example.askit.data.model.Answer
-import com.google.firebase.Firebase
+import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
-import com.google.firebase.firestore.firestore
 import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.tasks.await
 
 class AnswerRepository {
-    private val answersRef = Firebase.firestore.collection("answers")
 
+    private val db = FirebaseFirestore.getInstance()
+    private val answersRef = db.collection("answers")
+
+    //  Get answers for a specific question
+    fun getAnswersForQuestion(questionId: String) = callbackFlow {
+        val listener = answersRef
+            .whereEqualTo("questionId", questionId)
+            .orderBy("timestamp", Query.Direction.DESCENDING)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null || snapshot == null) {
+                    trySend(emptyList())
+                    return@addSnapshotListener
+                }
+                val answers = snapshot.toObjects(Answer::class.java)
+                trySend(answers)
+            }
+
+        awaitClose { listener.remove() }
+    }
+
+    // Post a new answer
     fun postAnswer(answer: Answer, onResult: (Boolean) -> Unit) {
-        val docId = answersRef.document().id
-        val answerWithId = answer.copy(id = docId)
-        answersRef.document(docId).set(answerWithId)
+        answersRef.document(answer.id)
+            .set(answer)
             .addOnSuccessListener { onResult(true) }
             .addOnFailureListener { onResult(false) }
     }
 
-    fun getAnswersForQuestion(questionId: String): Flow<List<Answer>> = callbackFlow {
-        val listenerRegistration = answersRef
-            .whereEqualTo("questionId", questionId)
-            .orderBy("timestamp", Query.Direction.DESCENDING)
-            .addSnapshotListener { snapshot, error ->
-                if (error != null) {
-                    trySend(emptyList())
-                    return@addSnapshotListener
-                }
+    //  Edit an existing answer
+    fun editAnswer(answerId: String, newContent: String, onResult: (Boolean) -> Unit) {
+        answersRef.document(answerId)
+            .update("content", newContent)
+            .addOnSuccessListener { onResult(true) }
+            .addOnFailureListener { onResult(false) }
+    }
 
-                val list = snapshot?.documents?.mapNotNull { doc ->
-                    doc.toObject(Answer::class.java)?.copy(id = doc.id)
-                } ?: emptyList()
+    // Delete an answer
+    fun deleteAnswer(answerId: String, onResult: (Boolean) -> Unit) {
+        answersRef.document(answerId)
+            .delete()
+            .addOnSuccessListener { onResult(true) }
+            .addOnFailureListener { onResult(false) }
+    }
 
-                trySend(list)
+    //  Upvote / remove upvote on answer
+    suspend fun upvoteAnswer(answerId: String, userId: String) {
+        val answerRef = answersRef.document(answerId)
+
+        db.runTransaction { transaction ->
+            val snapshot = transaction.get(answerRef)
+            val currentUpvotes = snapshot.get("upvotes") as? List<String> ?: emptyList()
+
+            val updatedUpvotes = if (currentUpvotes.contains(userId)) {
+                currentUpvotes - userId
+            } else {
+                currentUpvotes + userId
             }
 
-        awaitClose { listenerRegistration.remove() }
+            transaction.update(answerRef, "upvotes", updatedUpvotes)
+        }.await()
     }
 }
-

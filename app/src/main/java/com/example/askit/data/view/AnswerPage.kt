@@ -1,5 +1,6 @@
 package com.example.askit.data.view
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -8,143 +9,177 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import com.example.askit.data.model.Answer
-import com.example.askit.data.model.Question
 import com.example.askit.data.viewmodel.AnswerViewModel
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AnswerPage(
+    questionTitle: String,
     questionId: String,
-    onBackPressed: () -> Unit = {}
+    navController: NavController,
+    answerViewModel: AnswerViewModel = viewModel()
 ) {
-    val db = FirebaseFirestore.getInstance()
-    val viewModel: AnswerViewModel = viewModel()
-    var question by remember { mutableStateOf<Question?>(null) }
-    var userAnswer by remember { mutableStateOf("") }
-
-    val answers by viewModel.answers.collectAsState()
+    val context = LocalContext.current
+    val currentUserId = FirebaseAuth.getInstance().currentUser?.uid.orEmpty()
+    var newAnswer by remember { mutableStateOf("") }
 
     LaunchedEffect(questionId) {
-        db.collection("questions").document(questionId).get().addOnSuccessListener {
-            question = it.toObject(Question::class.java)?.copy(id = it.id)
-        }
-        viewModel.fetchAnswersForQuestion(questionId)
+        answerViewModel.loadAnswers(questionId)
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        // Top Bar
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Icon(
-                imageVector = Icons.Default.ArrowBack,
-                contentDescription = "Back",
-                modifier = Modifier
-                    .clickable { onBackPressed() }
-                    .padding(8.dp)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text("Answers", fontWeight = FontWeight.Bold, fontSize = 20.sp)
-        }
+    val answersMap by answerViewModel.answersMap.collectAsState()
+    val answerList = answersMap[questionId] ?: emptyList()
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Question Display
-        question?.let {
-            Text(it.title, fontWeight = FontWeight.Bold, fontSize = 20.sp)
-            Spacer(modifier = Modifier.height(8.dp))
-            Box(
-                modifier = Modifier
-                    .background(Color(0xFFEAEAEA), RoundedCornerShape(12.dp))
-                    .padding(horizontal = 12.dp, vertical = 6.dp)
-            ) {
-                Text(it.category, fontSize = 14.sp)
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Text("Answers", fontWeight = FontWeight.Bold)
-        Spacer(modifier = Modifier.height(8.dp))
-
-        LazyColumn(modifier = Modifier.weight(1f)) {
-            items(answers) { answer ->
-                AnswerItem(answer = answer, viewModel = viewModel)
-                Spacer(modifier = Modifier.height(12.dp))
-            }
-        }
-
-        OutlinedTextField(
-            value = userAnswer,
-            onValueChange = { userAnswer = it },
-            placeholder = { Text("Write your answer...") },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 8.dp)
-        )
-
-        Button(
-            onClick = {
-                if (userAnswer.isNotBlank()) {
-                    viewModel.addAnswer(questionId, userAnswer)
-                    userAnswer = ""
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Answers", fontWeight = FontWeight.Bold) },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    }
                 }
-            },
-            modifier = Modifier.fillMaxWidth()
+            )
+        },
+        bottomBar = {
+            Row(
+                modifier = Modifier
+                    .padding(8.dp)
+                    .background(Color(0xFFF0F0F0), RoundedCornerShape(12.dp))
+                    .padding(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                OutlinedTextField(
+                    value = newAnswer,
+                    onValueChange = { newAnswer = it },
+                    placeholder = { Text("Write your answer...") },
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(end = 8.dp),
+                    singleLine = true,
+                    shape = RoundedCornerShape(8.dp)
+                )
+
+                Button(
+                    onClick = {
+                        val uid = currentUserId
+                        val name = FirebaseAuth.getInstance().currentUser?.displayName ?: "Anonymous"
+
+                        if (newAnswer.trim().isNotEmpty()) {
+                            val answer = Answer(
+                                questionId = questionId,
+                                content = newAnswer.trim(),
+                                authorUid = uid,
+                                authorName = name,
+                                upvotes = emptyList()
+                            )
+                            answerViewModel.postAnswer(answer) { success ->
+                                if (success) {
+                                    newAnswer = ""
+                                    Toast.makeText(context, "Answer posted", Toast.LENGTH_SHORT).show()
+                                } else {
+                                    Toast.makeText(context, "Failed to post", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        }
+                    }
+                ) {
+                    Text("Post")
+                }
+            }
+        }
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .padding(paddingValues)
+                .padding(horizontal = 16.dp)
+                .fillMaxSize()
         ) {
-            Text("SUBMIT ANSWER")
+            Text(
+                text = "Q: $questionTitle",
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
+
+            if (answerList.isEmpty()) {
+                Text("No answers yet. Be the first to answer!")
+            } else {
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    items(answerList) { answer ->
+                        AnswerCard(
+                            answer = answer,
+                            currentUserId = currentUserId,
+                            questionId = answer.questionId, // or however you're referencing it
+                            viewModel = answerViewModel
+                        )
+                    }
+                }
+            }
         }
     }
 }
 
 @Composable
-fun AnswerItem(answer: Answer, viewModel: AnswerViewModel) {
-    val uid = FirebaseAuth.getInstance().currentUser?.uid
-    val liked = remember(answer.likes, uid) { uid != null && (answer.likes?.containsKey(uid) == true) }
-
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Color(0xFFF1F1F1), RoundedCornerShape(8.dp))
-            .padding(12.dp)
+fun AnswerCard(
+    answer: Answer,
+    currentUserId: String,
+    questionId: String,
+    viewModel: AnswerViewModel
+)
+ {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(8.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(text = answer.text, fontSize = 16.sp)
-        }
+        Column(Modifier.padding(12.dp)) {
+            Text(
+                text = answer.content,
+                style = MaterialTheme.typography.bodyLarge
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = "By ${answer.authorName.ifEmpty { "Anonymous" }}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.Gray
+                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.ThumbUp,
+                        contentDescription = "Like",
+                        modifier = Modifier
+                            .size(20.dp)
+                            .clickable {
+                                viewModel.upvoteAnswer(answer.id, currentUserId, questionId)
 
-        IconToggleButton(
-            checked = liked,
-            onCheckedChange = {
-                uid?.let {
-                    viewModel.toggleLike(answerId = answer.id, liked = !liked, userId = it)
+                            },
+                        tint = if (answer.upvotes.contains(currentUserId)) Color.Blue else Color.Gray
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(text = "${answer.upvotes.size}")
                 }
             }
-        ) {
-            Icon(
-                imageVector = Icons.Default.Favorite,
-                contentDescription = "Like",
-                tint = if (liked) Color.Red else Color.Gray
-            )
         }
-
-        Text("${answer.likes?.size ?: 0}", modifier = Modifier.padding(start = 4.dp))
     }
 }

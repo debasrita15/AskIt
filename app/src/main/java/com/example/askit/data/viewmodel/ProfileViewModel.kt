@@ -1,7 +1,6 @@
 package com.example.askit.data.viewmodel
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import com.example.askit.data.model.Answer
 import com.example.askit.data.model.Question
 import com.example.askit.data.model.UserProfile
@@ -10,7 +9,6 @@ import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
 
 class ProfileViewModel : ViewModel() {
 
@@ -33,13 +31,12 @@ class ProfileViewModel : ViewModel() {
     val answerCount: StateFlow<Int> = _answerCount.asStateFlow()
 
     private val _errorMessage = MutableStateFlow<String?>(null)
-    val errorMessage: StateFlow<String?> = _errorMessage
+    val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
 
     init {
         refreshAll()
     }
 
-    // Exposed to UI if needed
     fun refreshAll() {
         fetchUserProfile()
         fetchUserQuestions()
@@ -53,6 +50,7 @@ class ProfileViewModel : ViewModel() {
                 _userProfile.value = doc.toObject(UserProfile::class.java)
             }
             .addOnFailureListener {
+                _errorMessage.value = it.message
             }
     }
 
@@ -60,15 +58,19 @@ class ProfileViewModel : ViewModel() {
         val uid = auth.currentUser?.uid ?: return
         db.collection("questions")
             .whereEqualTo("uid", uid)
-            .get()
-            .addOnSuccessListener { result ->
-                val questions = result.mapNotNull { it.toObject(Question::class.java) }
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    _errorMessage.value = error.message
+                    return@addSnapshotListener
+                }
+                val questions = snapshot?.documents
+                    ?.mapNotNull { it.toObject(Question::class.java) }
+                    ?.sortedByDescending { it.timestamp } ?: emptyList()
                 _userQuestions.value = questions
                 _questionCount.value = questions.size
             }
-            .addOnFailureListener {exception ->
-                _errorMessage.value = exception.message}
     }
+
 
     private fun fetchUserAnswers() {
         val uid = auth.currentUser?.uid ?: return
@@ -80,19 +82,9 @@ class ProfileViewModel : ViewModel() {
                 _userAnswers.value = answers
                 _answerCount.value = answers.size
             }
-            .addOnFailureListener {exception ->
-                _errorMessage.value = exception.message}
-    }
-
-    fun updateProfileImage(base64: String) {
-        val uid = auth.currentUser?.uid ?: return
-        db.collection("users").document(uid)
-            .update("profileImageBase64", base64)
-            .addOnSuccessListener {
-                _userProfile.value = _userProfile.value?.copy(profileImageBase64 = base64)
+            .addOnFailureListener { exception ->
+                _errorMessage.value = exception.message
             }
-            .addOnFailureListener {exception ->
-                _errorMessage.value = exception.message}
     }
 
     fun logout() {

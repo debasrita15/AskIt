@@ -4,80 +4,68 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.askit.data.model.Answer
 import com.example.askit.data.repository.AnswerRepository
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-class AnswerViewModel : ViewModel() {
+class AnswerViewModel(
+    private val repository: AnswerRepository = AnswerRepository()
+) : ViewModel() {
 
-    private val repository = AnswerRepository()
-    private val uid = FirebaseAuth.getInstance().currentUser?.uid
-    private val db = FirebaseFirestore.getInstance()
+    private val _answersMap = MutableStateFlow<Map<String, List<Answer>>>(emptyMap())
+    val answersMap: StateFlow<Map<String, List<Answer>>> = _answersMap.asStateFlow()
 
-    private val _answers = MutableStateFlow<List<Answer>>(emptyList())
-    val answers: StateFlow<List<Answer>> = _answers
-
-    private val _statusMessage = MutableStateFlow<String?>(null)
-
-    fun fetchAnswersForQuestion(questionId: String) {
+    // Load answers for a specific question
+    fun loadAnswers(questionId: String) {
         viewModelScope.launch {
-            repository.getAnswersForQuestion(questionId).collectLatest { answerList ->
-                _answers.value = answerList
+            repository.getAnswersForQuestion(questionId).collect { answers ->
+                _answersMap.value = _answersMap.value.toMutableMap().apply {
+                    this[questionId] = answers
+                }
             }
         }
     }
 
-    fun addAnswer(questionId: String, answerText: String) {
-        val userId = uid
-        if (userId.isNullOrEmpty()) {
-            _statusMessage.value = "User not logged in"
-            return
-        }
-
-        val answer = Answer(
-            uid = userId,
-            questionId = questionId,
-            text = answerText,
-            timestamp = System.currentTimeMillis()
-        )
-
+    // Post a new answer
+    fun postAnswer(answer: Answer, onResult: (Boolean) -> Unit) {
         repository.postAnswer(answer) { success ->
-            _statusMessage.value = if (success) {
-                "Answer posted successfully"
-            } else {
-                "Failed to post answer"
+            if (success) loadAnswers(answer.questionId)
+            onResult(success)
+        }
+    }
+
+    // Upvote or remove upvote
+    fun upvoteAnswer(answerId: String, userId: String, questionId: String) {
+        viewModelScope.launch {
+            try {
+                repository.upvoteAnswer(answerId, userId)
+                // Optional reload: Firestore snapshot listener already updates if used correctly
+                loadAnswers(questionId)
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
         }
     }
 
-    fun toggleLike(answerId: String, liked: Boolean,userId: String) {
+    // Check if current user has upvoted an answer
+    fun hasUpvoted(answer: Answer, userId: String): Boolean {
+        return answer.upvotes.contains(userId)
+    }
 
-        val docRef = db.collection("answers").document(answerId)
+    // Delete answer
+    fun deleteAnswer(answerId: String, questionId: String, onResult: (Boolean) -> Unit) {
+        repository.deleteAnswer(answerId) { success ->
+            if (success) loadAnswers(questionId)
+            onResult(success)
+        }
+    }
 
-        db.runTransaction { transaction ->
-            val snapshot = transaction.get(docRef)
-
-            val currentLikes = try {
-                @Suppress("UNCHECKED_CAST")
-                snapshot.get("likes") as? Map<String, Boolean> ?: emptyMap()
-            } catch (e: Exception) {
-                emptyMap()
-            }
-
-            val updatedLikes = if (liked) {
-                currentLikes + (userId to true)
-            } else {
-                currentLikes - userId
-            }
-
-            transaction.update(docRef, "likes", updatedLikes)
-        }.addOnFailureListener {
-            _statusMessage.value = "Failed to update like: ${it.message}"
+    // Edit answer
+    fun editAnswer(answerId: String, newContent: String, questionId: String, onResult: (Boolean) -> Unit) {
+        repository.editAnswer(answerId, newContent) { success ->
+            if (success) loadAnswers(questionId)
+            onResult(success)
         }
     }
 }
-
-

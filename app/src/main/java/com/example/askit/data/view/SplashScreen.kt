@@ -1,15 +1,9 @@
 package com.example.askit.data.view
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -18,7 +12,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-import androidx.compose.material3.CircularProgressIndicator
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.tasks.await
 
 @Composable
 fun SplashScreen(
@@ -32,25 +27,26 @@ fun SplashScreen(
         val db = FirebaseFirestore.getInstance()
         val user = auth.currentUser
 
+        delay(1000) // delay ensures Compose settles before nav
+
         if (user != null) {
-            db.collection("users").document(user.uid).get()
-                .addOnSuccessListener { doc ->
-                    isLoading = false
-                    if (doc.exists()) {
-                        onNavigateToHome()
-                    } else {
-                        onNavigateToSignIn()
-                    }
-                }
-                .addOnFailureListener {
-                    isLoading = false
+            try {
+                val doc = db.collection("users").document(user.uid).get().await()
+                if (doc.exists()) {
+                    onNavigateToHome()
+                } else {
                     onNavigateToSignIn()
                 }
+            } catch (e: Exception) {
+                onNavigateToSignIn()
+            }
         } else {
-            isLoading = false
             onNavigateToSignIn()
         }
+
+        isLoading = false
     }
+
 
     Box(
         modifier = Modifier
@@ -71,4 +67,3 @@ fun SplashScreen(
         }
     }
 }
-

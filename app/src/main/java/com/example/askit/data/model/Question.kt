@@ -1,5 +1,7 @@
 package com.example.askit.data.model
 
+import com.google.firebase.firestore.PropertyName
+
 data class Question(
     val id: String = "",
     val uid: String = "",
@@ -8,6 +10,11 @@ data class Question(
     val category: String = "",
     val timestamp: Long = System.currentTimeMillis(),
     val authorName: String = "",
-    val likes: Int = 0,
-    val answersCount: Int = 0
+    @get:PropertyName("upvotes")
+    @set:PropertyName("upvotes")
+    var upvotes: List<String> = emptyList(),
+    val edited: Boolean = false,
+    val downvotes: Int = 0,
+    val votedBy: Map<String, Int> = emptyMap(), // userId -> 1 (upvote), -1 (downvote)
+    val answersCount: Int = 0,
 )
