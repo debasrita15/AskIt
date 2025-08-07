@@ -16,16 +16,21 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Comment
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.QuestionAnswer
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -78,118 +83,160 @@ fun ProfileScreen(
         }
     }
 
-    userProfile?.let { profile ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp)
-        ) {
-            // Initial Avatar Circle
-            Box(
-                modifier = Modifier
-                    .size(100.dp)
-                    .clip(CircleShape)
-                    .background(Color(0xFF4C6EF5), CircleShape)
-                    .align(Alignment.CenterHorizontally),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = profile.name.firstOrNull()?.uppercase() ?: "?",
-                    color = Color.White,
-                    fontSize = 36.sp,
-                    fontWeight = FontWeight.Bold
+    // Cyan to Blue Gradient Background
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(
+                        Color(0xFFF1F6FB),
+                        Color(0xFF7F5AF0),
+                        Color(0xFF005FFF)
+                    )
                 )
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Username
-            Text(
-                text = profile.name,
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.align(Alignment.CenterHorizontally)
             )
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            // Stats Row
-            Card(
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFFF9FAFC)),
-                elevation = CardDefaults.cardElevation(4.dp)
+    ) {
+        userProfile?.let { profile ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(16.dp)
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly
+                // Gradient Avatar
+                Box(
+                    modifier = Modifier
+                        .size(100.dp)
+                        .clip(CircleShape)
+                        .background(
+                            Brush.linearGradient(
+                                listOf(Color(0xFF8E24AA), Color(0xFF3949AB))
+                            )
+                        )
+                        .align(Alignment.CenterHorizontally),
+                    contentAlignment = Alignment.Center
                 ) {
-                    StatCard(label = "Questions", count = questionCount)
-                    StatCard(label = "Answers", count = answerCount)
-                    StatCard(label = "Badges", count = badges.size)
+                    Text(
+                        text = profile.name.firstOrNull()?.uppercase() ?: "?",
+                        color = Color.White,
+                        fontSize = 36.sp,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
-            }
 
-            Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(22.dp))
 
-            // Badges Section
-            if (badges.isNotEmpty()) {
                 Text(
-                    text = "Earned Badges",
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 18.sp,
-                    modifier = Modifier.padding(bottom = 8.dp)
+                    text = profile.name,
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
                 )
 
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(badges) { badge ->
-                        BadgeCard(badge = badge) { selectedBadge = badge }
+                Spacer(modifier = Modifier.height(20.dp))
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    StatCard(label = "Questions", count = questionCount, modifier = Modifier.weight(1f))
+                    StatCard(label = "Answers", count = answerCount, modifier = Modifier.weight(1f))
+                    StatCard(label = "Badges", count = badges.size, modifier = Modifier.weight(1f))
+                }
+
+
+                Spacer(modifier = Modifier.height(30.dp))
+
+                if (badges.isNotEmpty()) {
+                    Text(
+                        text = "Earned Badges",
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 18.sp,
+                        color = Color.White,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        items(badges) { badge ->
+                            BadgeCard(badge = badge) { selectedBadge = badge }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(34.dp))
+                }
+
+                // Menu Options
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.15f))
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(32.dp)
+                    ) {
+                        val menuGradient = Brush.horizontalGradient(
+                            colors = listOf(
+                                Color(0xFF42A5F5), // Light Blue
+                                Color(0xFF1E88E5), // Medium Blue
+                                Color(0xFF3949AB)  // Indigo Blue
+                            )
+                        )
+
+                        MenuCard(
+                            text = "My Questions",
+                            onClick = onMyQuestionsClick,
+                            gradient = menuGradient,
+                            icon = Icons.Default.QuestionAnswer
+                        )
+                        MenuCard(
+                            text = "My Answers",
+                            onClick = onMyAnswersClick,
+                            gradient = menuGradient,
+                            icon = Icons.Default.ThumbUp
+                        )
+                        MenuCard(
+                            text = "Settings",
+                            onClick = onSettingsClick,
+                            gradient = menuGradient,
+                            icon = Icons.Default.Settings
+                        )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(24.dp))
-            }
+                Spacer(modifier = Modifier.height(40.dp))
 
-            // Menu Options
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFFF4F5F7))
-            ) {
-                Column {
-                    MenuCard("My Questions", onClick = onMyQuestionsClick)
-                    Divider()
-                    MenuCard("My Answers", onClick = onMyAnswersClick)
-                    Divider()
-                    MenuCard("Settings", onClick = onSettingsClick)
+                // Logout Button
+                Button(
+                    onClick = { showLogoutDialog = true },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFFE53935), // Bold red
+                        contentColor = Color.White
+                    ),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Text("Logout", fontWeight = FontWeight.Bold)
                 }
             }
-
-            Spacer(modifier = Modifier.height(30.dp))
-
-            // Logout Button
-            Button(
-                onClick = { showLogoutDialog = true },
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
-            ) {
-                Text("Logout", color = Color.White)
-            }
+        } ?: Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator(color = Color.White)
         }
-    } ?: Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        CircularProgressIndicator()
     }
 
-    // Badge Detail Dialog
     selectedBadge?.let {
         BadgeDetailDialog(badge = it, onDismiss = { selectedBadge = null })
     }
 
-    // Logout Confirmation Dialog
     if (showLogoutDialog) {
         AlertDialog(
             onDismissRequest = { showLogoutDialog = false },
@@ -214,80 +261,197 @@ fun ProfileScreen(
 
 
 @Composable
-fun MenuCard(text: String, onClick: () -> Unit) {
-    Card(
+fun MenuCard(
+    text: String,
+    onClick: () -> Unit,
+    textColor: Color = Color.White,
+    gradient: Brush,
+    icon: ImageVector? = null
+) {
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 6.dp)
-            .clickable { onClick() },
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(1.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .background(brush = gradient)
+            .clickable { onClick() }
+            .padding(vertical = 14.dp, horizontal = 20.dp)
     ) {
-        Text(
-            text = text,
-            modifier = Modifier.padding(16.dp),
-            fontSize = 16.sp
-        )
-    }
-}
-
-
-@Composable
-fun StatCard(label: String, count: Int) {
-    Card(
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFF3F4F6)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        modifier = Modifier.width(100.dp)
-    ) {
-        Column(
-            modifier = Modifier.padding(12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Start
         ) {
-            Text(text = count.toString(), fontWeight = FontWeight.Bold, fontSize = 18.sp)
-            Text(text = label, fontSize = 14.sp)
+            if (icon != null) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = textColor,
+                    modifier = Modifier
+                        .size(22.dp)
+                        .padding(end = 10.dp)
+                )
+            }
+            Text(
+                text = text,
+                fontSize = 16.sp,
+                color = textColor,
+                fontWeight = FontWeight.Medium
+            )
         }
     }
 }
 
 
+
+
 @Composable
-fun BadgeCard(badge: Badge, onClick: (Badge) -> Unit) {
+fun StatCard(label: String, count: Int, modifier: Modifier = Modifier) {
+    val statGradient = Brush.horizontalGradient(
+        listOf(
+            Color(0xFF42A5F5), // Light Blue
+            Color(0xFF1E88E5), // Medium Blue
+            Color(0xFF3949AB)  // Indigo Blue
+        )
+    )
+
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(16.dp))
+            .background(statGradient)
+            .padding(12.dp)
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(
+                text = count.toString(),
+                fontWeight = FontWeight.Bold,
+                fontSize = 18.sp,
+                color = Color.White
+            )
+            Text(
+                text = label,
+                fontSize = 14.sp,
+                color = Color.White
+            )
+        }
+    }
+}
+
+
+
+@Composable
+fun BadgeCard(
+    badge: Badge,
+    onClick: (Badge) -> Unit
+) {
     Card(
         modifier = Modifier
-            .size(width = 100.dp, height = 60.dp)
+            .size(width = 110.dp, height = 70.dp)
             .clickable { onClick(badge) },
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFF0F4FF)),
-        elevation = CardDefaults.cardElevation(4.dp)
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.Transparent // Use custom gradient background
+        ),
+        elevation = CardDefaults.cardElevation(8.dp)
     ) {
-        Column(
-            modifier = Modifier.padding(8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+        Box(
+            modifier = Modifier
+                .background(
+                    Brush.horizontalGradient(
+                        colors = listOf(
+                            Color(0xFF2196F3), // Bright Blue
+                            Color(0xFF9C27B0)  // Deep Purple
+                        )
+                    ),
+                    shape = RoundedCornerShape(16.dp)
+                )
+                .fillMaxSize()
+                .padding(8.dp),
+            contentAlignment = Alignment.Center
         ) {
-            Icon(Icons.Default.Star, contentDescription = null, tint = Color(0xFF4A90E2))
-            Text(badge.title, fontWeight = FontWeight.Medium, fontSize = 12.sp)
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.EmojiEvents, // Trophy icon
+                    contentDescription = "Badge Icon",
+                    tint = Color.White,
+                    modifier = Modifier.size(24.dp)
+                )
+                Text(
+                    text = badge.title,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 13.sp,
+                    color = Color.White
+                )
+            }
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BadgeDetailDialog(
     badge: Badge,
     onDismiss: () -> Unit
 ) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text("OK")
+    AlertDialog(onDismissRequest = onDismiss) {
+        Box(
+            modifier = Modifier
+                .clip(RoundedCornerShape(24.dp))
+                .background(Color.White)
+                .padding(24.dp)
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                modifier = Modifier.width(280.dp)
+            ) {
+                // Trophy icon
+                Icon(
+                    imageVector = Icons.Default.EmojiEvents,
+                    contentDescription = null,
+                    tint = Color(0xFFFFC107), // Trophy gold
+                    modifier = Modifier.size(60.dp)
+                )
+
+                Text(
+                    text = "You've unlocked",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.Gray
+                )
+
+                Text(
+                    text = badge.title,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Text(
+                    text = badge.description,
+                    textAlign = TextAlign.Center,
+                    color = Color.DarkGray,
+                    fontSize = 14.sp
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Button(
+                    onClick = onDismiss,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFFFF4081)
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("Awesome!", color = Color.White)
+                }
             }
-        },
-        title = { Text(badge.title, fontWeight = FontWeight.Bold) },
-        text = { Text(badge.description) }
-    )
+        }
+    }
 }
+
 
 
 @Composable
@@ -307,80 +471,114 @@ fun MyQuestionsScreen(
 
     val myQuestions = allQuestions.filter { it.uid == myUid }
 
-    LazyColumn(
+    Box(
         modifier = Modifier
             .fillMaxSize()
+            .background(
+                brush = Brush.verticalGradient(
+                    colors = listOf(
+                        Color(0xFFFFE0B2), // Light Peach
+                        Color(0xFFFFF3E0)  // Ivory
+                    )
+                )
+            )
             .padding(12.dp)
     ) {
-        items(myQuestions) { question ->
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp)
-                    .clickable {
-                        navController.navigate("answers/${question.id}")
-                    },
-                shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(4.dp)
-            ) {
-                Column(modifier = Modifier.padding(12.dp)) {
-
-                    Text(
-                        text = question.authorName + if (question.edited) " (edited)" else "",
-                        fontWeight = FontWeight.Bold
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Text(text = question.title, style = MaterialTheme.typography.titleMedium)
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(text = question.description ?: "", style = MaterialTheme.typography.bodySmall)
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    Row(
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        modifier = Modifier.fillMaxWidth()
+        if (myQuestions.isEmpty()) {
+            // Show message if no questions
+            Text(
+                text = "You haven't asked any questions yet.",
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.SemiBold,
+                color = Color.Gray,
+                modifier = Modifier.align(Alignment.Center)
+            )
+        } else {
+            LazyColumn {
+                items(myQuestions) { question ->
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp)
+                            .clickable {
+                                navController.navigate("answers/${question.id}")
+                            },
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color(0xFFFFF8E1) // Very light peach
+                        ),
+                        elevation = CardDefaults.cardElevation(6.dp)
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.Default.ThumbUp,
-                                contentDescription = "Upvote",
-                                tint = if (questionViewModel.hasUpvoted(question, myUid)) Color.Blue else Color.Gray,
-                                modifier = Modifier.clickable {
-                                    questionViewModel.upvoteQuestion(question.id, myUid)
-                                }
+                        Column(modifier = Modifier.padding(14.dp)) {
+
+                            Text(
+                                text = question.authorName + if (question.edited) " (edited)" else "",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp
                             )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("${question.upvotes.size}")
 
-                            Spacer(modifier = Modifier.width(16.dp))
+                            Spacer(modifier = Modifier.height(6.dp))
 
-                            Icon(
-                                imageVector = Icons.Default.Comment,
-                                contentDescription = "Answers",
-                                modifier = Modifier.clickable {
-                                    navController.navigate("answers/${question.id}")
-                                }
+                            Text(
+                                text = question.title,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold
                             )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("${question.answersCount}")
-                        }
 
-                        Row {
-                            IconButton(onClick = {
-                                editingQuestion = question
-                            }) {
-                                Icon(Icons.Default.Edit, contentDescription = "Edit")
-                            }
+                            Spacer(modifier = Modifier.height(4.dp))
 
-                            IconButton(onClick = {
-                                questionViewModel.deleteQuestion(question.id) {
-                                    Toast.makeText(context, "Deleted", Toast.LENGTH_SHORT).show()
+                            Text(
+                                text = question.description ?: "",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            Row(
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = Icons.Default.ThumbUp,
+                                        contentDescription = "Upvote",
+                                        tint = if (questionViewModel.hasUpvoted(question, myUid)) Color(0xFFFF5722) else Color.Gray,
+                                        modifier = Modifier.clickable {
+                                            questionViewModel.upvoteQuestion(question.id, myUid)
+                                        }
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("${question.upvotes?.size ?: 0}")
+
+                                    Spacer(modifier = Modifier.width(16.dp))
+
+                                    Icon(
+                                        imageVector = Icons.Default.Comment,
+                                        contentDescription = "Answers",
+                                        tint = Color.Gray,
+                                        modifier = Modifier.clickable {
+                                            navController.navigate("answers/${question.id}")
+                                        }
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("${question.answersCount}")
                                 }
-                            }) {
-                                Icon(Icons.Default.Delete, contentDescription = "Delete")
+
+                                Row {
+                                    IconButton(onClick = {
+                                        editingQuestion = question
+                                    }) {
+                                        Icon(Icons.Default.Edit, contentDescription = "Edit")
+                                    }
+
+                                    IconButton(onClick = {
+                                        questionViewModel.deleteQuestion(question.id) {
+                                            Toast.makeText(context, "Deleted", Toast.LENGTH_SHORT).show()
+                                        }
+                                    }) {
+                                        Icon(Icons.Default.Delete, contentDescription = "Delete")
+                                    }
+                                }
                             }
                         }
                     }
@@ -404,6 +602,7 @@ fun MyQuestionsScreen(
 }
 
 
+
 @Composable
 fun EditQuestionDialog(
     original: Question,
@@ -414,28 +613,45 @@ fun EditQuestionDialog(
     var description by remember { mutableStateOf(original.description ?: "") }
     var category by remember { mutableStateOf(original.category ?: "") }
 
+    val customColors = OutlinedTextFieldDefaults.colors(
+        focusedTextColor = Color(0xFF4E342E),
+        unfocusedTextColor = Color(0xFF4E342E),
+        focusedBorderColor = Color(0xFFFFA726),       // Peach
+        unfocusedBorderColor = Color(0xFFBCAAA4),     // Light brown
+        cursorColor = Color(0xFFFF7043),              // Coral
+        focusedLabelColor = Color(0xFF6D4C41),
+        unfocusedLabelColor = Color(0xFF8D6E63),
+        focusedContainerColor = Color.White,
+        unfocusedContainerColor = Color.White
+    )
+
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Edit Question") },
+        title = { Text("Edit Question", fontWeight = FontWeight.Bold) },
         text = {
             Column {
                 OutlinedTextField(
                     value = title,
                     onValueChange = { title = it },
-                    label = { Text("Title") }
+                    label = { Text("Title") },
+                    colors = customColors,
+                    singleLine = true
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 OutlinedTextField(
                     value = description,
                     onValueChange = { description = it },
                     label = { Text("Description") },
+                    colors = customColors,
                     maxLines = 4
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 OutlinedTextField(
                     value = category,
                     onValueChange = { category = it },
-                    label = { Text("Category") }
+                    label = { Text("Category") },
+                    colors = customColors,
+                    singleLine = true
                 )
             }
         },
@@ -449,7 +665,7 @@ fun EditQuestionDialog(
                 )
                 onConfirm(updated)
             }) {
-                Text("Save")
+                Text("Save", color = Color(0xFFFF6F00)) // Orange accent
             }
         },
         dismissButton = {
@@ -459,6 +675,7 @@ fun EditQuestionDialog(
         }
     )
 }
+
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -472,19 +689,29 @@ fun MyAnswersScreen(
     val answersMap by answerViewModel.answersMap.collectAsState()
     var editingAnswer by remember { mutableStateOf<Answer?>(null) }
 
-    // Flatten map and filter by current user
     val allAnswers = answersMap.values.flatten()
     val userAnswers = allAnswers.filter { it.authorUid == currentUserId }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("My Answers") },
+                title = {
+                    Text(
+                        "My Answers",
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.White
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color.Transparent,  // Transparent background
+                    titleContentColor = Color.Black,     // Or any suitable color
+                    navigationIconContentColor = Color.Black
+                )
             )
         }
     ) { innerPadding ->
@@ -492,39 +719,73 @@ fun MyAnswersScreen(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(innerPadding),
-                contentAlignment = Alignment.Center
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                Color(0xFFFFE0B2), // Light Peach
+                                Color(0xFFFFF3E0)  // Ivory
+                            )
+                        )
+                    )
+                    .padding(12.dp)
             ) {
-                Text("You haven’t answered any questions yet.")
+                Text(
+                    text = "You haven't posted any answers yet.",
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color.Gray,
+                    modifier = Modifier.align(Alignment.Center)
+                )
             }
         } else {
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
-                    .padding(12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 items(userAnswers) { answer ->
-                    Card(
-                        shape = RoundedCornerShape(12.dp),
-                        elevation = CardDefaults.cardElevation(4.dp),
-                        modifier = Modifier.fillMaxWidth()
+                    ElevatedCard(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color(0xFFFFF8E1) // Very light peach
+                        ),
+                        elevation = CardDefaults.cardElevation(6.dp)
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
+
                             Row(
-                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
-                                modifier = Modifier.fillMaxWidth()
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Column {
-                                    Text("In response to:", fontSize = 12.sp, color = Color.Gray)
-                                    Text(answer.questionId, fontWeight = FontWeight.SemiBold)
-                                    // You can fetch and display actual question title here
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "Answered on:",
+                                        fontSize = 12.sp,
+                                        color = Color.Gray
+                                    )
+                                    Text(
+                                        text = answer.content.ifEmpty { answer.questionId },
+                                        fontWeight = FontWeight.SemiBold,
+                                        fontSize = 14.sp,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        color = Color(0xFF5D4037) // Deep brown
+                                    )
                                 }
+
                                 Row {
                                     IconButton(onClick = { editingAnswer = answer }) {
-                                        Icon(Icons.Default.Edit, contentDescription = "Edit")
+                                        Icon(
+                                            imageVector = Icons.Default.Edit,
+                                            contentDescription = "Edit",
+                                            tint = Color(0xFFFFA726) // Peach
+                                        )
                                     }
                                     IconButton(onClick = {
                                         answerViewModel.deleteAnswer(answer.id, answer.questionId) { success ->
@@ -533,30 +794,45 @@ fun MyAnswersScreen(
                                             }
                                         }
                                     }) {
-                                        Icon(Icons.Default.Delete, contentDescription = "Delete")
+                                        Icon(
+                                            imageVector = Icons.Default.Delete,
+                                            contentDescription = "Delete",
+                                            tint = Color(0xFFD32F2F) // Red
+                                        )
                                     }
                                 }
                             }
 
-                            Spacer(modifier = Modifier.height(6.dp))
+                            Spacer(modifier = Modifier.height(8.dp))
+
                             Text(
                                 text = answer.content,
                                 fontSize = 14.sp,
-                                maxLines = 4,
-                                overflow = TextOverflow.Ellipsis
+                                maxLines = 6,
+                                overflow = TextOverflow.Ellipsis,
+                                lineHeight = 20.sp,
+                                color = Color(0xFF4E342E)
                             )
 
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = "Upvotes: ${answer.upvotes.size}",
-                                fontSize = 12.sp,
-                                color = Color.Gray
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            Icon(
+                                imageVector = Icons.Default.ThumbUp,
+                                contentDescription = "Upvote",
+                                tint = if (answerViewModel.hasUpvoted(answer, userId = String())) Color(0xFFFF5722) else Color.Gray,
+                                modifier = Modifier.clickable {
+                                    answerViewModel.upvoteAnswer(answer.id, userId = String(), answer.questionId)
+                                }
                             )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("${answer.upvotes?.size ?: 0}")
+                        }
                         }
                     }
                 }
             }
 
+            // Dialog for editing answer
             editingAnswer?.let { answer ->
                 EditAnswerDialog(
                     original = answer,
@@ -571,9 +847,10 @@ fun MyAnswersScreen(
                     }
                 )
             }
-        }
     }
 }
+
+
 
 
 @Composable
@@ -584,21 +861,34 @@ fun EditAnswerDialog(
 ) {
     var content by remember { mutableStateOf(original.content) }
 
+    val customColors = OutlinedTextFieldDefaults.colors(
+        focusedTextColor = Color(0xFF4E342E),
+        unfocusedTextColor = Color(0xFF4E342E),
+        focusedBorderColor = Color(0xFFFFA726),       // Peach
+        unfocusedBorderColor = Color(0xFFBCAAA4),     // Light brown
+        cursorColor = Color(0xFFFF7043),              // Coral
+        focusedLabelColor = Color(0xFF6D4C41),
+        unfocusedLabelColor = Color(0xFF8D6E63),
+        focusedContainerColor = Color.White,
+        unfocusedContainerColor = Color.White
+    )
+
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Edit Answer") },
+        title = { Text("Edit Answer", fontWeight = FontWeight.Bold) },
         text = {
             OutlinedTextField(
                 value = content,
                 onValueChange = { content = it },
                 label = { Text("Your Answer") },
                 maxLines = 6,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                colors = customColors
             )
         },
         confirmButton = {
             TextButton(onClick = { onConfirm(content) }) {
-                Text("Save")
+                Text("Save", color = Color(0xFFFF6F00)) // Orange accent
             }
         },
         dismissButton = {

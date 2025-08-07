@@ -31,7 +31,7 @@ class ProfileViewModel : ViewModel() {
     val answerCount: StateFlow<Int> = _answerCount.asStateFlow()
 
     private val _errorMessage = MutableStateFlow<String?>(null)
-    val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
+
 
     init {
         refreshAll()
@@ -61,11 +61,18 @@ class ProfileViewModel : ViewModel() {
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
                     _errorMessage.value = error.message
+                    println(" Error fetching questions: ${error.message}")
                     return@addSnapshotListener
                 }
+
+                println("Snapshot docs: ${snapshot?.documents?.size}")
+
                 val questions = snapshot?.documents
                     ?.mapNotNull { it.toObject(Question::class.java) }
                     ?.sortedByDescending { it.timestamp } ?: emptyList()
+
+                println("Mapped questions: $questions")
+
                 _userQuestions.value = questions
                 _questionCount.value = questions.size
             }
@@ -75,7 +82,7 @@ class ProfileViewModel : ViewModel() {
     private fun fetchUserAnswers() {
         val uid = auth.currentUser?.uid ?: return
         db.collection("answers")
-            .whereEqualTo("uid", uid)
+            .whereEqualTo("authorUid", uid)
             .get()
             .addOnSuccessListener { result ->
                 val answers = result.mapNotNull { it.toObject(Answer::class.java) }

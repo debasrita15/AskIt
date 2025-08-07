@@ -1,5 +1,6 @@
 package com.example.askit.data.model
 
+import com.google.firebase.Timestamp
 import com.google.firebase.firestore.PropertyName
 
 data class Question(
@@ -8,13 +9,20 @@ data class Question(
     val title: String = "",
     val description: String = "",
     val category: String = "",
-    val timestamp: Long = System.currentTimeMillis(),
+    @get:PropertyName("timestamp")
+    @set:PropertyName("timestamp")
+    var timestamp: Timestamp = Timestamp.now(), //  Make nullable
+
     val authorName: String = "",
     @get:PropertyName("upvotes")
     @set:PropertyName("upvotes")
-    var upvotes: List<String> = emptyList(),
+    var upvotes: List<String>? = emptyList(), // Make nullable for Firebase
+
     val edited: Boolean = false,
     val downvotes: Int = 0,
-    val votedBy: Map<String, Int> = emptyMap(), // userId -> 1 (upvote), -1 (downvote)
+    @get:PropertyName("votedBy")
+    @set:PropertyName("votedBy")
+    var votedBy: Map<String, Int>? = emptyMap(), // Make nullable
+
     val answersCount: Int = 0,
 )

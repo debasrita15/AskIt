@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.askit.data.model.Question
 import com.example.askit.data.repository.QuestionRepository
+import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.util.*
@@ -18,17 +19,6 @@ class QuestionViewModel(
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery
 
-    val filteredQuestions: StateFlow<List<Question>> = combine(_questions, _searchQuery) { questions, query ->
-        if (query.isBlank()) {
-            questions
-        } else {
-            questions.filter {
-                it.title.contains(query, ignoreCase = true) ||
-                        it.description.contains(query, ignoreCase = true) ||
-                        it.category.contains(query, ignoreCase = true)
-            }
-        }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun setSearchQuery(query: String) {
         _searchQuery.value = query
@@ -53,8 +43,10 @@ class QuestionViewModel(
         onResult: (Boolean) -> Unit
     ) {
         val id = UUID.randomUUID().toString()
+        val uid = FirebaseAuth.getInstance().currentUser?.uid.orEmpty()
         val question = Question(
             id = id,
+            uid = uid,
             title = title,
             description = description,
             category = category,
@@ -85,7 +77,7 @@ class QuestionViewModel(
     }
 
     fun hasUpvoted(question: Question, userId: String): Boolean {
-        return question.upvotes.contains(userId)
+        return question.upvotes?.contains(userId) ?: false
     }
 
     fun deleteQuestion(questionId: String, onResult: (Boolean) -> Unit) {

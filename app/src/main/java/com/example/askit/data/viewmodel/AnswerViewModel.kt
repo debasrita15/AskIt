@@ -7,6 +7,8 @@ import com.example.askit.data.repository.AnswerRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class AnswerViewModel(
@@ -16,56 +18,70 @@ class AnswerViewModel(
     private val _answersMap = MutableStateFlow<Map<String, List<Answer>>>(emptyMap())
     val answersMap: StateFlow<Map<String, List<Answer>>> = _answersMap.asStateFlow()
 
-    // Load answers for a specific question
+    // Track which questions are already being collected to avoid duplicate
+    private val activeCollectors = mutableSetOf<String>()
+
+
+     // Loads answers for a specific question
+
     fun loadAnswers(questionId: String) {
+        // Avoid adding multiple collectors for the same question
+        if (activeCollectors.contains(questionId)) return
+        activeCollectors.add(questionId)
+
         viewModelScope.launch {
-            repository.getAnswersForQuestion(questionId).collect { answers ->
-                _answersMap.value = _answersMap.value.toMutableMap().apply {
-                    this[questionId] = answers
+            repository.getAnswersForQuestion(questionId)
+                .distinctUntilChanged()
+                .collect { answers ->
+                    _answersMap.update { currentMap ->
+                        currentMap.toMutableMap().apply {
+                            put(questionId, answers)
+                        }
+                    }
                 }
-            }
         }
     }
 
-    // Post a new answer
+
+    // Posts a new answer
+
     fun postAnswer(answer: Answer, onResult: (Boolean) -> Unit) {
+        println("Posting answer: $answer")
         repository.postAnswer(answer) { success ->
-            if (success) loadAnswers(answer.questionId)
             onResult(success)
         }
     }
 
-    // Upvote or remove upvote
+    // Toggles upvote for an answer
+
     fun upvoteAnswer(answerId: String, userId: String, questionId: String) {
         viewModelScope.launch {
             try {
                 repository.upvoteAnswer(answerId, userId)
-                // Optional reload: Firestore snapshot listener already updates if used correctly
-                loadAnswers(questionId)
             } catch (e: Exception) {
                 e.printStackTrace()
             }
         }
     }
 
-    // Check if current user has upvoted an answer
-    fun hasUpvoted(answer: Answer, userId: String): Boolean {
-        return answer.upvotes.contains(userId)
-    }
+    // Deletes an answer
 
-    // Delete answer
     fun deleteAnswer(answerId: String, questionId: String, onResult: (Boolean) -> Unit) {
         repository.deleteAnswer(answerId) { success ->
-            if (success) loadAnswers(questionId)
+            onResult(success)
+        }
+    }
+// Edits answer content
+
+    fun editAnswer(answerId: String, newContent: String, questionId: String, onResult: (Boolean) -> Unit) {
+        repository.editAnswer(answerId, newContent) { success ->
             onResult(success)
         }
     }
 
-    // Edit answer
-    fun editAnswer(answerId: String, newContent: String, questionId: String, onResult: (Boolean) -> Unit) {
-        repository.editAnswer(answerId, newContent) { success ->
-            if (success) loadAnswers(questionId)
-            onResult(success)
-        }
+    // Checks if the user has upvoted a particular answer.
+
+    fun hasUpvoted(answer: Answer, userId: String): Boolean {
+        return userId in answer.upvotes
     }
 }

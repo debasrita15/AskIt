@@ -1,7 +1,6 @@
 package com.example.askit.data.view
 
 import android.widget.Toast
-import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -24,13 +23,15 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.QuestionAnswer
 import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -39,34 +40,38 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.askit.data.model.Answer
 import com.example.askit.data.model.Question
 import com.example.askit.data.viewmodel.AnswerViewModel
 import com.example.askit.data.viewmodel.QuestionViewModel
+import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 import java.text.SimpleDateFormat
-import java.util.Date
 import java.util.Locale
-import kotlin.math.absoluteValue
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -83,33 +88,27 @@ fun HomeScreen(
     val currentUser = FirebaseAuth.getInstance().currentUser
     val currentUid = currentUser?.uid.orEmpty()
 
-    var userName by remember { mutableStateOf("User") }
-
-    // Fetch user's name from Firestore
-    LaunchedEffect(currentUid) {
+    val userName by produceState(initialValue = "User", currentUid) {
         if (currentUid.isNotBlank()) {
             val snapshot = FirebaseFirestore.getInstance()
                 .collection("users")
                 .document(currentUid)
                 .get()
                 .await()
-            userName = snapshot.getString("name") ?: "User"
+            value = snapshot.getString("name") ?: "User"
         }
     }
 
-    // Fetch all questions and their answers
     LaunchedEffect(Unit) {
         questionViewModel.fetchQuestions()
     }
 
-    // Ensure all answers are fetched in response to question updates
     LaunchedEffect(allQuestions) {
         allQuestions.forEach { question ->
             answerViewModel.loadAnswers(question.id)
         }
     }
 
-    // Realtime search
     val filteredQuestions = allQuestions.filter {
         it.title.contains(query, ignoreCase = true) ||
                 it.description.contains(query, ignoreCase = true)
@@ -117,106 +116,113 @@ fun HomeScreen(
 
     val answerInputs = remember { mutableStateMapOf<String, String>() }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Hi, $userName") },
-                actions = {
-                    IconButton(onClick = { navController.navigate("notifications") }) {
-                        Icon(Icons.Default.Notifications, contentDescription = "Notifications")
-                    }
-                    IconButton(onClick = { navController.navigate("profile") }) {
-                        Icon(Icons.Default.AccountCircle, contentDescription = "Profile")
-                    }
-                }
+    // Gradient Background
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                brush = Brush.verticalGradient(
+                    colors = listOf(
+                        Color(0xFFE1BEE7), // Lavender
+                        Color(0xFFFFF8E1), // Ivory
+                        Color(0xFFFFAB91)  // Peach
+                    )
+                )
             )
-        },
-        floatingActionButton = {
-            FloatingActionButton(onClick = {
-                navController.navigate("askQuestion")
-            }) {
-                Icon(Icons.Default.Add, contentDescription = "Ask Question")
-            }
-        }
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .padding(paddingValues)
-                .fillMaxSize()
-        ) {
-            SearchBar(
-                query = query,
-                onQueryChange = { questionViewModel.setSearchQuery(it) }
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            if (filteredQuestions.isEmpty()) {
+    ) {
+        Scaffold(
+            containerColor = Color.Transparent,
+            topBar = {
+                TopAppBar(
+                    title = {
+                        Text(
+                            text = "Hi, $userName",
+                            color = Color(0xFFA141DC), // Ivory-Golden Accent
+                            style = MaterialTheme.typography.titleLarge.copy(
+                                fontWeight = FontWeight.Bold,
+                                shadow = Shadow(
+                                    color = Color.Black.copy(alpha = 0.1f),
+                                    offset = Offset(1f, 1f),
+                                    blurRadius = 2f
+                                )
+                            )
+                        )
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = Color.Transparent
+                    ),
+                    actions = {
+                        IconButton(onClick = { navController.navigate("notifications") }) {
+                            Icon(Icons.Default.Notifications, contentDescription = "Notifications", tint = Color(0xFF4E342E))
+                        }
+                        IconButton(onClick = { navController.navigate("profile") }) {
+                            Icon(Icons.Default.AccountCircle, contentDescription = "Profile", tint = Color(0xFF4E342E))
+                        }
+                    }
+                )
+            },
+            floatingActionButton = {
                 Box(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .padding(top = 100.dp),
-                    contentAlignment = Alignment.TopCenter
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp),
+                    contentAlignment = Alignment.BottomCenter
                 ) {
-                    Text("No questions found.")
-                }
-            } else {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 12.dp),
-                    contentPadding = PaddingValues(bottom = 80.dp)
-                ) {
-                    items(filteredQuestions) { question ->
-                        val answersForQuestion = answerMap[question.id] ?: emptyList()
-                        val answerText = answerInputs[question.id] ?: ""
-
-                        QuestionCard(
-                            question = question,
-                            answers = answersForQuestion,
-                            onAnswerClick = {},
-                            onUpvoteAnswer = { answer ->
-                                answerViewModel.upvoteAnswer(answer.id, currentUid, question.id)
-                            }
-                        )
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        OutlinedTextField(
-                            value = answerText,
-                            onValueChange = { answerInputs[question.id] = it },
-                            label = { Text("Write your answer...") },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 8.dp),
-                            maxLines = 3
-                        )
-
-                        Spacer(modifier = Modifier.height(4.dp))
-
-                        Button(
-                            onClick = {
-                                val content = answerInputs[question.id]
-                                if (!content.isNullOrBlank()) {
-                                    val newAnswer = Answer(
-                                        questionId = question.id,
-                                        content = content,
-                                        authorUid = currentUid,
-                                        authorName = userName
-                                    )
-                                    answerViewModel.postAnswer(newAnswer) {
-                                        answerInputs[question.id] = ""
-                                    }
-                                }
-                            },
-                            modifier = Modifier
-                                .align(Alignment.End)
-                                .padding(horizontal = 8.dp)
-                        ) {
-                            Text("Post Answer")
+                    ExtendedFloatingActionButton(
+                        onClick = { navController.navigate("askQuestion") },
+                        modifier = Modifier.fillMaxWidth(),
+                        containerColor = Color(0xFFE1BEE7),
+                        contentColor = Color(0xFF4E342E),
+                        text = { Text("Ask a Question",fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold) },
+                        icon = {
+                            Icon(Icons.Default.Add, contentDescription = "Ask Question")
                         }
+                    )
+                }
+            }
+        ){ paddingValues ->
 
-                        Spacer(modifier = Modifier.height(16.dp))
+            Column(
+                modifier = Modifier
+                    .padding(paddingValues)
+                    .fillMaxSize()
+            ) {
+                SearchBar(
+                    query = query,
+                    onQueryChange = { questionViewModel.setSearchQuery(it) }
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                if (filteredQuestions.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(top = 100.dp),
+                        contentAlignment = Alignment.TopCenter
+                    ) {
+                        Text("No questions found.", color = Color.Black)
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 12.dp),
+                        contentPadding = PaddingValues(bottom = 100.dp) // Extra padding for FAB
+                    ) {
+                        items(filteredQuestions) { question ->
+                            QuestionCard(
+                                question = question,
+                                onAnswerClick = {
+                                    navController.navigate("answerPage/${question.title}/${question.id}")
+                                },
+                                onUpvoteClick = {
+                                    questionViewModel.upvoteQuestion(question.id, currentUid)
+                                }
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                        }
                     }
                 }
             }
@@ -228,53 +234,38 @@ fun HomeScreen(
 @Composable
 fun QuestionCard(
     question: Question,
-    answers: List<Answer>,
     onAnswerClick: () -> Unit,
-    onUpvoteAnswer: (Answer) -> Unit
+    onUpvoteClick: () -> Unit
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 6.dp),
+            .padding(8.dp),
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        elevation = CardDefaults.cardElevation(4.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color(0xFFFFF8E1) // Soft pale peach for contrast
+        )
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(14.dp)) {
 
-            // Question Info
-            Text(
-                text = question.title,
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = question.description,
-                style = MaterialTheme.typography.bodyMedium
-            )
-            Spacer(modifier = Modifier.height(6.dp))
+            // Username Initial Row
             Row(
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                val authorInitial = question.authorName.firstOrNull()?.uppercase() ?: "?"
-                val backgroundColor = remember(question.authorName) {
-                    val colors = listOf(
-                        Color(0xFFEF5350), Color(0xFFAB47BC), Color(0xFF42A5F5),
-                        Color(0xFF26A69A), Color(0xFFFF7043), Color(0xFFFFCA28)
-                    )
-                    val index = (question.authorName.hashCode().absoluteValue % colors.size)
-                    colors[index]
-                }
+                val initial = question.authorName.firstOrNull()?.uppercase() ?: "U"
 
                 Box(
-                    contentAlignment = Alignment.Center,
                     modifier = Modifier
-                        .size(32.dp)
+                        .size(36.dp)
                         .clip(CircleShape)
-                        .background(backgroundColor)
+                        .background(Color(0xFFFF7043)), // Vibrant peach
+                    contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = authorInitial,
-                        style = MaterialTheme.typography.labelMedium.copy(color = Color.White)
+                        text = initial,
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold
                     )
                 }
 
@@ -283,146 +274,82 @@ fun QuestionCard(
                 Column {
                     Text(
                         text = question.authorName,
-                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold)
+                        fontWeight = FontWeight.Medium,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color(0xFF4E342E) // Warm deep brown
                     )
                     Text(
                         text = formatTimestamp(question.timestamp),
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = Color(0xFF8D6E63) // Soft cocoa
                     )
                 }
-            }
-
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            // Answer Section
-            if (answers.isNotEmpty()) {
-                Text(
-                    text = "Answers:",
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-
-                answers.forEach { answer ->
-                    AnswerPreview(answer = answer, onUpvoteClick = {
-                        onUpvoteAnswer(answer)
-                    })
-                }
-            } else {
-                Text(
-                    text = "No answers yet. Be the first to respond!",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
             }
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Answer Button
-            Button(
-                onClick = onAnswerClick,
-                modifier = Modifier.fillMaxWidth()
+            // Question Text
+            Text(
+                text = question.title,
+                style = MaterialTheme.typography.bodyLarge.copy(
+                    color = Color(0xFF4E342E),
+                    fontWeight = FontWeight.SemiBold
+                )
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Actions Row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Write an Answer")
-            }
-        }
-    }
-}
-
-
-@Composable
-fun AnswerPreview(
-    answer: Answer,
-    onUpvoteClick: () -> Unit
-) {
-    var expanded by remember { mutableStateOf(false) }
-    val maxPreviewLength = 150
-    val shouldTruncate = answer.content.length > maxPreviewLength
-    val authorInitial = answer.authorName.firstOrNull()?.uppercase() ?: "?"
-
-    // Generate consistent color based on username hash
-    val backgroundColor = remember(answer.authorName) {
-        val colors = listOf(
-            Color(0xFFEF5350), Color(0xFFAB47BC), Color(0xFF42A5F5),
-            Color(0xFF26A69A), Color(0xFFFF7043), Color(0xFFFFCA28)
-        )
-        val index = (answer.authorName.hashCode().absoluteValue % colors.size)
-        colors[index]
-    }
-
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 6.dp)
-            .animateContentSize()
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            // Colored circle with initial
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier
-                    .size(36.dp)
-                    .clip(CircleShape)
-                    .background(backgroundColor)
-            ) {
-                Text(
-                    text = authorInitial,
-                    style = MaterialTheme.typography.labelLarge.copy(
-                        color = Color.White
+                // Upvotes
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.clickable { onUpvoteClick() }
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.ThumbUp,
+                        contentDescription = "Upvote",
+                        tint = Color.Gray,
+                        modifier = Modifier.size(20.dp)
                     )
-                )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "${question.upvotes?.size ?: 0}",
+                        color = Color(0xFF5D4037) // Cocoa
+                    )
+                }
+
+                // Answers
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.clickable { onAnswerClick() }
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.QuestionAnswer,
+                        contentDescription = "Answers",
+                        tint = Color.Gray,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "Answers",
+                        color = Color(0xFF5D4037)
+                    )
+                }
             }
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            Text(
-                text = answer.authorName,
-                style = MaterialTheme.typography.labelMedium
-            )
-        }
-
-        Spacer(modifier = Modifier.height(4.dp))
-
-        Text(
-            text = if (expanded || !shouldTruncate) answer.content
-            else answer.content.take(maxPreviewLength) + "...",
-            style = MaterialTheme.typography.bodySmall,
-            modifier = Modifier.clickable { expanded = !expanded }
-        )
-
-        Spacer(modifier = Modifier.height(4.dp))
-
-        Text(
-            text = formatTimestamp(answer.timestamp),
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-
-        Row(
-            modifier = Modifier.padding(top = 4.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = onUpvoteClick) {
-                Icon(
-                    imageVector = Icons.Default.ThumbUp,
-                    contentDescription = "Upvote"
-                )
-            }
-            Text(
-                text = "${answer.upvotes} Upvotes",
-                style = MaterialTheme.typography.labelSmall
-            )
         }
     }
 }
 
 
 
-fun formatTimestamp(timestamp: Long): String {
+fun formatTimestamp(timestamp: Timestamp): String {
     val sdf = SimpleDateFormat("MMM dd, yyyy • hh:mm a", Locale.getDefault())
-    return sdf.format(Date(timestamp))
+    return sdf.format(timestamp.toDate())
 }
 
 
@@ -437,12 +364,21 @@ fun SearchBar(
         modifier = Modifier
             .fillMaxWidth()
             .padding(16.dp),
-        placeholder = { Text("Search questions...") },
+        placeholder = { Text("Search questions...", color = Color.Gray) },
         singleLine = true,
-        shape = RoundedCornerShape(8.dp),
-        colors = OutlinedTextFieldDefaults.colors()
+        shape = RoundedCornerShape(12.dp),
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedTextColor = Color.Black,
+            unfocusedTextColor = Color.Black,
+            cursorColor = Color(0xFFFF4081), // Hot pink cursor
+            focusedBorderColor = Color(0xFFFF4081),
+            unfocusedBorderColor = Color.LightGray,
+            focusedContainerColor = Color.White,
+            unfocusedContainerColor = Color.White
+        )
     )
 }
+
 
 
 @Composable
@@ -464,7 +400,7 @@ fun AskQuestionScreen(
     val currentUid = currentUser?.uid ?: ""
     var authorName by remember { mutableStateOf("Anonymous") }
 
-    // Fetch user name once
+    // Fetch user name
     LaunchedEffect(currentUid) {
         if (currentUid.isNotBlank()) {
             FirebaseFirestore.getInstance().collection("users").document(currentUid).get()
@@ -474,88 +410,145 @@ fun AskQuestionScreen(
         }
     }
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        Text("Ask a Question", style = MaterialTheme.typography.headlineSmall)
-
-        OutlinedTextField(
-            value = title,
-            onValueChange = { title = it },
-            label = { Text("Title") },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        OutlinedTextField(
-            value = description,
-            onValueChange = { description = it },
-            label = { Text("Description") },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(150.dp),
-            maxLines = 10
-        )
-
-        OutlinedTextField(
-            value = category,
-            onValueChange = { category = it },
-            label = { Text("Category") },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        errorMessage?.let {
-            Text(
-                text = it,
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodySmall
-            )
-        }
-
-        Button(
-            onClick = {
-                if (title.isBlank() || description.isBlank() || category.isBlank()) {
-                    errorMessage = "All fields are required."
-                    return@Button
-                }
-
-                if (currentUser == null) {
-                    Toast.makeText(context, "You must be logged in to post a question", Toast.LENGTH_SHORT).show()
-                    return@Button
-                }
-
-                isLoading = true
-                errorMessage = null
-
-                questionViewModel.postQuestion(
-                    title = title.trim(),
-                    description = description.trim(),
-                    category = category.trim(),
-                    authorName = authorName
-                ) { success ->
-                    isLoading = false
-                    if (success) {
-                        Toast.makeText(context, "Question posted", Toast.LENGTH_SHORT).show()
-                        navController.popBackStack()
-                    } else {
-                        errorMessage = "Failed to post question."
-                    }
-                }
-            },
-            modifier = Modifier.fillMaxWidth(),
-            enabled = !isLoading
-        ) {
-            if (isLoading) {
-                CircularProgressIndicator(
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    strokeWidth = 2.dp,
-                    modifier = Modifier.size(20.dp)
+            .background(
+                brush = Brush.verticalGradient(
+                    colors = listOf(
+                        Color(0xFFFFCC80), // Peach
+                        Color(0xFFFFF8E1)  // Ivory
+                    )
                 )
-            } else {
-                Text("Post Question")
+            )
+            .padding(20.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize(),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Text(
+                "Ask a Question",
+                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                modifier = Modifier.padding(top = 8.dp),
+                color = Color(0xFFFF7043)
+            )
+
+            OutlinedTextField(
+                value = title,
+                onValueChange = { title = it },
+                label = { Text("Title") },
+                modifier = Modifier.fillMaxWidth(),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = Color(0xFF4E342E),
+                    unfocusedTextColor = Color(0xFF4E342E),
+                    focusedBorderColor = Color(0xFFFFA726), // Peach
+                    unfocusedBorderColor = Color(0xFFBCAAA4), // Light brown
+                    cursorColor = Color(0xFFFF7043),
+                    focusedLabelColor = Color(0xFF6D4C41),
+                    unfocusedLabelColor = Color(0xFF8D6E63),
+                    focusedContainerColor = Color.White,
+                    unfocusedContainerColor = Color.White
+                )
+            )
+
+            OutlinedTextField(
+                value = description,
+                onValueChange = { description = it },
+                label = { Text("Description") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(150.dp),
+                maxLines = 10,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = Color(0xFF4E342E),
+                    unfocusedTextColor = Color(0xFF4E342E),
+                    focusedBorderColor = Color(0xFFFFA726), // Peach
+                    unfocusedBorderColor = Color(0xFFBCAAA4), // Light brown
+                    cursorColor = Color(0xFFFF7043),
+                    focusedLabelColor = Color(0xFF6D4C41),
+                    unfocusedLabelColor = Color(0xFF8D6E63),
+                    focusedContainerColor = Color.White,
+                    unfocusedContainerColor = Color.White
+                )
+            )
+
+
+            OutlinedTextField(
+                value = category,
+                onValueChange = { category = it },
+                label = { Text("Category") },
+                modifier = Modifier.fillMaxWidth(),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = Color(0xFF4E342E),
+                    unfocusedTextColor = Color(0xFF4E342E),
+                    focusedBorderColor = Color(0xFFFFA726), // Peach
+                    unfocusedBorderColor = Color(0xFFBCAAA4), // Light brown
+                    cursorColor = Color(0xFFFF7043),
+                    focusedLabelColor = Color(0xFF6D4C41),
+                    unfocusedLabelColor = Color(0xFF8D6E63),
+                    focusedContainerColor = Color.White,
+                    unfocusedContainerColor = Color.White
+                )
+            )
+
+            errorMessage?.let {
+                Text(
+                    text = it,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+
+            Button(
+                onClick = {
+                    if (title.isBlank() || description.isBlank() || category.isBlank()) {
+                        errorMessage = "All fields are required."
+                        return@Button
+                    }
+
+                    if (currentUser == null) {
+                        Toast.makeText(context, "You must be logged in to post a question", Toast.LENGTH_SHORT).show()
+                        return@Button
+                    }
+
+                    isLoading = true
+                    errorMessage = null
+
+                    questionViewModel.postQuestion(
+                        title = title.trim(),
+                        description = description.trim(),
+                        category = category.trim(),
+                        authorName = authorName
+                    ) { success ->
+                        isLoading = false
+                        if (success) {
+                            Toast.makeText(context, "Question posted", Toast.LENGTH_SHORT).show()
+                            navController.popBackStack()
+                        } else {
+                            errorMessage = "Failed to post question."
+                        }
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !isLoading,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFFFFA726),
+                    contentColor = Color.White
+                )
+            ) {
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        color = Color(0xFFFF7043),
+                        strokeWidth = 2.dp,
+                        modifier = Modifier.size(20.dp)
+                    )
+                } else {
+                    Text("Post Question")
+                }
             }
         }
     }
 }
+

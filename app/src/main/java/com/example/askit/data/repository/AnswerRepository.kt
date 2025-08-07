@@ -1,6 +1,8 @@
 package com.example.askit.data.repository
 
 import com.example.askit.data.model.Answer
+import com.google.firebase.Timestamp
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import kotlinx.coroutines.channels.awaitClose
@@ -12,32 +14,35 @@ class AnswerRepository {
     private val db = FirebaseFirestore.getInstance()
     private val answersRef = db.collection("answers")
 
-    //  Get answers for a specific question
+    // Realtime fetch answers for a specific question using snapshot listener
     fun getAnswersForQuestion(questionId: String) = callbackFlow {
         val listener = answersRef
             .whereEqualTo("questionId", questionId)
-            .orderBy("timestamp", Query.Direction.DESCENDING)
+            .orderBy("timestamp", Query.Direction.DESCENDING) // ⚠ Requires index
             .addSnapshotListener { snapshot, error ->
                 if (error != null || snapshot == null) {
                     trySend(emptyList())
                     return@addSnapshotListener
                 }
                 val answers = snapshot.toObjects(Answer::class.java)
+                println("Fetched answers: $answers")
                 trySend(answers)
             }
 
         awaitClose { listener.remove() }
     }
 
-    // Post a new answer
+    // Post a new answer with server-generated timestamp
     fun postAnswer(answer: Answer, onResult: (Boolean) -> Unit) {
-        answersRef.document(answer.id)
-            .set(answer)
+        val answerWithTimestamp = answer.copy(timestamp = Timestamp.now())
+
+        answersRef.document(answerWithTimestamp.id)
+            .set(answerWithTimestamp)
             .addOnSuccessListener { onResult(true) }
             .addOnFailureListener { onResult(false) }
     }
 
-    //  Edit an existing answer
+    //  Edit answer
     fun editAnswer(answerId: String, newContent: String, onResult: (Boolean) -> Unit) {
         answersRef.document(answerId)
             .update("content", newContent)
@@ -45,7 +50,7 @@ class AnswerRepository {
             .addOnFailureListener { onResult(false) }
     }
 
-    // Delete an answer
+    //  Delete answer
     fun deleteAnswer(answerId: String, onResult: (Boolean) -> Unit) {
         answersRef.document(answerId)
             .delete()
@@ -53,7 +58,7 @@ class AnswerRepository {
             .addOnFailureListener { onResult(false) }
     }
 
-    //  Upvote / remove upvote on answer
+    // Upvote or remove upvote
     suspend fun upvoteAnswer(answerId: String, userId: String) {
         val answerRef = answersRef.document(answerId)
 
@@ -67,7 +72,11 @@ class AnswerRepository {
                 currentUpvotes + userId
             }
 
-            transaction.update(answerRef, "upvotes", updatedUpvotes)
+            transaction.update(answerRef, mapOf(
+                "upvotes" to updatedUpvotes,
+                "timestamp" to FieldValue.serverTimestamp() // triggers snapshot update
+            ))
         }.await()
     }
 }
+

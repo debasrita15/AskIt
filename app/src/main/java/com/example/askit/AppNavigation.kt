@@ -1,14 +1,14 @@
 package com.example.askit
 
 import android.annotation.SuppressLint
-import androidx.activity.compose.BackHandler
-import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 import com.example.askit.data.view.*
 import com.example.askit.data.viewmodel.AnswerViewModel
 import com.example.askit.data.viewmodel.ProfileViewModel
@@ -61,12 +61,8 @@ fun AppNavigation(
         // ✅ Sign Up
         composable("signup") {
             SignUpScreen(
-                onSwitchToSignIn = { navController.popBackStack() },
-                onSignUpSuccess = {
-                    navController.navigate("home") {
-                        popUpTo("splash") { inclusive = true }
-                    }
-                }
+                onSwitchToSignIn = { navController.navigate("signin") },
+                onSignUpSuccess = { navController.navigate("home") }  // ← This is what matters
             )
         }
 
@@ -132,17 +128,19 @@ fun AppNavigation(
             )
         }
 
-        composable("answer/{questionId}/{questionTitle}") { backStackEntry ->
-            val questionId =
-                backStackEntry.arguments?.getString("questionId") ?: return@composable
-            val questionTitle = backStackEntry.arguments?.getString("questionTitle") ?: ""
-            AnswerPage(
-                questionTitle = questionTitle,
-                questionId = questionId,
-                navController = navController,
-                answerViewModel = answerViewModel
+        composable(
+            "answerPage/{questionTitle}/{questionId}",
+            arguments = listOf(
+                navArgument("questionTitle") { type = NavType.StringType },
+                navArgument("questionId") { type = NavType.StringType }
             )
+        ) { backStackEntry ->
+            val title = backStackEntry.arguments?.getString("questionTitle") ?: ""
+            val id = backStackEntry.arguments?.getString("questionId") ?: ""
+            AnswerPage(id, title, navController)
         }
+
+
         composable("notifications") {
             NotificationScreen(navController = navController)
         }
